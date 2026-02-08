@@ -68,3 +68,8 @@ Installera TypeScript i roten så att alla paket kan använda det
 ```
 pnpm add -D typescript --workspace-root
 ```
+
+Installera tsx i roten (för att köra TypeScript direkt, exempelvis iTunes-script, utan separat byggsteg)
+```
+pnpm add -D tsx --workspace-root
+```
