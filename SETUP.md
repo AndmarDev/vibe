@@ -20,3 +20,39 @@ git branch -M main
 git remote add origin https://github.com/...
 git push -u origin main
 ```
+
+# Node pnpm
+
+Node
+```
+node -v
+  v25.0.0
+nvm list available
+nvm install 25.6.0
+nvm use 25.6.0
+node -v
+  v25.6.0
+```
+
+Uppdatera Corepack
+```
+npm install --global corepack@latest
+```
+
+Installera pnpm
+```
+corepack enable pnpm
+
+pnpm -v
+  10.26.2
+```
+
+Initiera Node-projekt med pnpm (skapar `package.json`)
+```
+pnpm init
+```
+
+Installera alla beroenden i monorepot (skapar `pnpm-lock.yaml` och `node_modules` i roten)
+```
+pnpm install
+```
