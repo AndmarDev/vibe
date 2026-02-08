@@ -63,3 +63,8 @@ packages:
   - 'libs/*'
   - 'apps/*'
 ```
+
+Installera TypeScript i roten så att alla paket kan använda det
+```
+pnpm add -D typescript --workspace-root
+```
