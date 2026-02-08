@@ -56,3 +56,10 @@ Installera alla beroenden i monorepot (skapar `pnpm-lock.yaml` och `node_modules
 ```
 pnpm install
 ```
+
+Skapa `pnpm-workspace.yaml` med följande innehåll
+```
+packages:
+  - 'libs/*'
+  - 'apps/*'
+```
