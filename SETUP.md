@@ -73,3 +73,12 @@ Installera tsx i roten (för att köra TypeScript direkt, exempelvis iTunes-scri
 ```
 pnpm add -D tsx --workspace-root
 ```
+
+# libs/rules
+
+Skapa `libs/rules` som kommer att användas av backend (`pnpm init` skapar `libs/rules/package.json`)
+```
+mkdir -p libs/rules
+cd libs/rules
+pnpm init
+```
