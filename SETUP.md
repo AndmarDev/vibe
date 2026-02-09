@@ -82,3 +82,7 @@ mkdir -p libs/rules
 cd libs/rules
 pnpm init
 ```
+
+Uppdatera `libs/rules/package.json` för att:
+- Konfigurera `@app/rules` som ESM-paket
+- Definiera dist som export (konsumeras av andra paket)
