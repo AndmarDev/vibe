@@ -1,0 +1,15 @@
+// libs/rules/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022", // ESNext också ett alternativ
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true, // Skapar .d.ts-filer (bra för lib, så att backend förstår typerna)
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"]
+}

@@ -86,3 +86,6 @@ pnpm init
 Uppdatera `libs/rules/package.json` för att:
 - Konfigurera `@app/rules` som ESM-paket
 - Definiera dist som export (konsumeras av andra paket)
+
+Skapa `libs/rules/tsconfig.json` för att
+- Konfigurera `libs/rules` för TypeScript (NodeNext / ESM)
