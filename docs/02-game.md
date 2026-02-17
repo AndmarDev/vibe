@@ -2,9 +2,10 @@
 
 ## Syfte
 
-Detta dokument definierar Game och dess tillstånd.
+Detta dokument definierar Game och dess övergripande tillstånd,
+start, avslut samt slutlig ranking.
 
-## NORMATIVT: GameState
+# NORMATIVT: GameState
 
 Game har exakt ett av följande tillstånd:
 
@@ -14,43 +15,42 @@ Game har exakt ett av följande tillstånd:
 
 ## LOBBY
 
-Game är skapat.
+Game är skapat av Creator.
 
 - Players kan ansluta.
-- Creator startar Game.
+- Creator kan starta Game.
 - Inga Cycles eller Rounds finns.
 
 ## IN_PROGRESS
 
 Game pågår.
 
-- Cycles och Rounds skapas och spelas.
-- DJ-rotation sker enligt Cycle-regler.
+- Cycles och Rounds skapas och spelas sekventiellt.
+- DJ-rotation sker enligt regler i `03-cycle`.
 
 ## FINISHED
 
 Game är avslutat.
 
 - Inga nya Cycles eller Rounds skapas.
-- Inga spelhandlingar är tillåtna.
+- Inga övergångar eller regelstyrda händelser sker efter `FINISHED`.
+- Game återgår aldrig från `FINISHED`.
 
-Game återgår aldrig från `FINISHED`.
-
-## NORMATIVT: Övergångar
+# NORMATIVT: Övergångar
 
 ### startGame
 `LOBBY → IN_PROGRESS`
 
 - Triggas av Creator.
-- Kräver att player-count uppfyller constraint.
+- Kräver att Player-count uppfyller constraint.
 
 ### finishGame
 `IN_PROGRESS → FINISHED`
 
-- Triggas vid cycle boundary, eller
+- Triggas när Cycle är i tillståndet `BOUNDARY_DECISION` enligt `03-cycle`, eller
 - Triggas administrativt av Creator.
 
-## NORMATIVT: Player-count constraint
+# NORMATIVT: Player-count constraint
 
 Game definierar:
 
@@ -63,3 +63,15 @@ Game startas endast om:
 - antal Players ≤ maxPlayers
 
 Regler för hur `maxPlayers` bestäms definieras utanför Game-modellen.
+
+# NORMATIVT: Slutlig ranking
+
+Vid övergång till `FINISHED` fastställs slutlig ranking.
+
+Ranking bestäms enligt följande ordning:
+
+1. Total Card count (högst vinner).
+2. Vid lika total Card count: antal DJ Cards (högst vinner).
+3. Vid fortsatt lika: delad vinst.
+
+Inga ytterligare tie-break-regler tillämpas.

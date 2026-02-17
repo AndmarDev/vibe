@@ -47,6 +47,15 @@ Informativ text ska:
 Nya begrepp införs aldrig informellt i dokumentationen.
 Begreppsändringar följer projektets etablerade process (se `process.md`).
 
+Tekniska namn i kod eller API är inte normativa begrepp.
+De får inte ändra eller utöka spelreglernas innebörd.
+
+## Språklig disciplin
+
+Endast definierade engelska domänbegrepp får användas som substantiv.
+Övrig löptext ska använda etablerad svenska.
+Odefinierade engelska ord får inte introduceras informellt.
+
 ## Exempel
 
 Exempel används:

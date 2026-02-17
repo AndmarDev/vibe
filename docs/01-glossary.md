@@ -6,9 +6,9 @@ Detta dokument definierar begreppen i ett socialt musikspel
 där deltagare turas om att spela musik och gissa.
 
 Begrepp som definieras här är normativa.
-Regler och tillstånd definieras i respektive dokument.
+Regler och tillståndsövergångar definieras i dokument 02–07.
 
-## NORMATIVT: Spelmodell
+# NORMATIVT: Game Model
 
 ## Game
 
@@ -28,18 +28,19 @@ Ett varv runt bordet där varje Player är DJ exakt en gång.
 **Egenskaper:**
 - Cycle består av Rounds.
 - DJ-rotation sker per Round.
+- En Player är DJ en gång per Cycle.
 - Cycle är struktur, inte spelhändelse.
 
 ## Round
 
 **Definition:**
-En spelhändelse där en Performance är aktiv, Players gissar och resultat fastställs.
+En spelhändelse där en Performance är aktiv, Players lämnar Guesses och resultat fastställs.
 
 **Egenskaper:**
 - Round har exakt en DJ.
 - Round har en state machine.
 - Round kan referera flera Performances över tid.
-- Round äger transitions och reveal samt fastställer tilldelning av Cards, Jokers och DJ Stars.
+- Round äger transitions och fastställer tilldelning av Cards och Jokers.
 
 ## Performance
 
@@ -47,10 +48,10 @@ En spelhändelse där en Performance är aktiv, Players gissar och resultat fast
 En instans av en Recording inom en Round.
 
 **Egenskaper:**
-- En Round kan ha flera Performances över tid.
+- En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Alla Guess och DJ Prediction gäller aktiv Performance.
-- Endast aktiv Performance kan ligga till grund för tilldelning av Cards, Jokers och DJ Stars.
+- Alla Guesses gäller aktiv Performance.
+- Endast aktiv Performance ligger till grund för tilldelning av Cards och Jokers.
 - Performance har ingen egen state machine.
 
 ## Player
@@ -60,8 +61,8 @@ En deltagare i ett Game.
 
 **Egenskaper:**
 - Player existerar endast inom ett Game.
-- Player är inte ett konto eller en device.
-- Player kan gissa, vara DJ och vinna Cards, Jokers och DJ Stars.
+- Player är inte ett konto eller device.
+- Player kan gissa, vara DJ, samt vinna Cards och Jokers.
 
 ## DJ
 
@@ -70,9 +71,19 @@ Den Player som är utsedd att leda en specifik Round.
 
 **Egenskaper:**
 - Varje Round har exakt en DJ.
-- DJ styr Roundens transitions enligt de tillåtna övergångarna i `04-round`.
-- DJ lämnar ingen Guess i den Rounden.
-- DJ lämnar en DJ Prediction för aktiv Performance.
+- DJ leder Roundens flöde enligt reglerna i `04-round`.
+- DJ lämnar Guess som övriga Players.
+- DJ får inte spendera Jokers i den Round där hen är DJ.
+- När DJ tilldelas Card i sin Round är kortet ett DJ Card (utom vid DJ Takeover).
+
+## Ordinarie DJ
+
+**Definition:**
+Den Player som utses till DJ genom Cycle-rotation enligt `03-cycle`.
+
+**Egenskaper:**
+- Ordinarie DJ är den normala DJ-rollen i en Round.
+- DJ genom DJ Takeover är inte Ordinarie DJ.
 
 ## Creator
 
@@ -85,13 +96,25 @@ Den Player som skapade Game.
 - Creator kan utföra DJ Takeover.
 - Creator deltar i övrigt som vanlig Player.
 
+## DJ Takeover
+
+**Definition:**
+Creator övertar DJ-rollen i en aktiv Round.
+
+**Egenskaper:**
+- Creator blir DJ för Rounden.
+- Creator lämnar Guess som övriga Players.
+- Creator kan inte tilldelas DJ Card i den Rounden.
+- Om Creator gissar korrekt under Takeover, tilldelas hen ett Timeline Card.
+- Takeover påverkar inte framtida DJ-rotation.
+
 ## Guess
 
 **Definition:**
 En Players samlade svar för en Performance.
 
 **Egenskaper:**
-- En Player har högst en Guess per Round och den gäller alltid aktiv Performance.
+- En Player har högst en Guess per Performance och den gäller alltid aktiv Performance.
 - Guess består av GuessParts.
 - Guess bedöms vid reveal.
 
@@ -100,81 +123,91 @@ En Players samlade svar för en Performance.
 **Definition:**
 En separat bedömd del av en Guess.
 
-**Exempel:**
-1. Tidslinje
-2. Låt
+**Typer:**
+1. Timeline
+2. Title
 3. Artist
 
 **Egenskaper:**
-- GuessParts committas sekventiellt.
+- GuessParts skickas in sekventiellt.
 - GuessParts bedöms separat.
-
-## DJ Prediction
-
-**Definition:**
-DJ:s bedömning av aktiv Performances svårighetsgrad.
-
-**Egenskaper:**
-- Tillhör Performance.
-- Fastställs vid låsning.
-- Ligger till grund för eventuell tilldelning av DJ Star.
 
 ## Card
 
 **Definition:**
-Ett persistent resultat som kan tilldelas en Player baserat på dennes Guess i en Round.
+Ett persistent objekt som tillhör en Player i ett Game.
+
+Card är en kategori som inkluderar:
+
+- Start Card
+- Timeline Card
+- DJ Card
 
 **Egenskaper:**
-- Tillhör Player inom ett Game.
-- Uppstår vid reveal.
+- Card tillhör exakt en Player.
+- Card är persistent under hela Game.
+- Alla Card-typer räknas lika i total Card count.
 - En Player kan få högst ett Card per Round.
+- Vissa Cards genereras av Round, andra skapas vid Game-start.
+
+## Start Card
+
+**Definition:**
+Ett Card som skapas vid Game-start och etablerar Playerns initiala timeline-position.
+
+**Egenskaper:**
+- Innehåller endast year.
+- Har ingen Song.
+- Placeras i Playerns timeline.
+
+## Timeline Card
+
+**Definition:**
+Ett Card som genereras av en Round när en Player uppfyller villkoren för korrekt Guess.
+
+**Egenskaper:**
+- Innehåller Song och year.
+- Placeras i Playerns timeline.
+- Påverkar framtida timeline-guessing.
+
+## DJ Card
+
+**Definition:**
+Ett Card som genereras när DJ lämnar en korrekt Guess i en Round utan DJ Takeover.
+
+**Egenskaper:**
+- Räknas som Card i total Card count.
+- Placeras inte i timeline.
+- Påverkar inte framtida timeline-guessing.
 
 ## Joker
 
 **Definition:**
-En begränsad resurs som kan tilldelas en Player baserat på dennes Guess i en Round.
+En begränsad resurs som kan tilldelas baserat på Guess-utfall.
 
 **Egenskaper:**
-- Tillhör Player inom ett Game.
-- En Player kan vinna högst en Joker per Round.
-- Spenderas i samband med commit av GuessPart.
-- Påverkar inte facit.
+- Tillhör en Player inom ett Game.
+- En Player kan vinna högst 1 Joker per Round.
+- En Player kan inneha högst 3 Jokers samtidigt.
+- Jokers spenderas när Player väljer att reducera alternativ för en GuessPart (före submit).
+- Jokers påverkar inte facit.
 
-## DJ Star
-
-**Definition:**
-Ett persistent resultat som kan tilldelas DJ baserat på DJ Prediction i en Round.
-
-**Egenskaper:**
-- Tillhör Player inom ett Game.
-- En Round kan generera högst en DJ Star.
-- Används vid tie-break i slutresultat.
-
-## DJ Takeover
-
-**Definition:**
-Creator övertar DJ-rollen i en aktiv Round.
-
-**Egenskaper:**
-- Creator blir DJ för Rounden.
-- DJ Star utdelas inte i den Rounden.
-
-## NORMATIVT: Musikmodell
+# NORMATIVT: Music Model
 
 ## Song
 
 **Definition:**
-Kuraterad musikalisk identitet (titel, artist, år).
+Kuraterad musikalisk identitet (title, artist, year).
 
 **Egenskaper:**
 - Song är persistent.
-- Song är inte uppspelningsbar.
-- Song kan tillhöra Mixes.
+- Song är inte direkt spelbar.
+- Song kan tillhöra flera Mixes.
 
 ## Recording
 
 **Definition:**
-En uppspelningsbar instans av en Song.
+En spelbar instans av en Song.
 
 **Egenskaper:**
 - Tillhör exakt en Song.
@@ -189,11 +222,11 @@ En kuraterad samling av Songs.
 - En Song kan tillhöra flera Mixes.
 - Mix påverkar endast urval av Songs.
 
-## NORMATIVT: Relationer
+# NORMATIVT: Relationer
 
 - Game består av Cycles.
 - Cycle består av Rounds.
+- Round har exakt en DJ.
 - Högst en Performance är aktiv per Round.
-- Guess och DJ Prediction gäller alltid aktiv Performance.
-- Recording tillhör exakt en Song.
-- Cards, Jokers och DJ Stars genereras genom Round.
+- Guess gäller alltid aktiv Performance.
+- Cards och Jokers genereras genom Round.

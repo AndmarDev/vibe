@@ -6,7 +6,7 @@
 Detta dokument definierar Premium som en produktpolicy:
 vilka kapabiliteter som är tillgängliga för ett ägarskap (entitlement).
 
-Premium ändrar inte spelmodellen i 01–07.
+Premium ändrar inte spelmodellen i 01–07 eller reglerna i 08.
 
 ## NORMATIVT: Definition
 

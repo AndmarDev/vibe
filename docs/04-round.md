@@ -2,11 +2,11 @@
 
 ## Syfte
 
-Detta dokument definierar Round, som är spel­händelsen för en Performance inom en Cycle.
+Detta dokument definierar Round, som är spelhändelsen för en Performance inom en Cycle.
 
-Round äger state machine, transitions, reveal och fastställer tilldelning av Cards, Jokers och DJ Stars.
+Round äger sin state machine, reveal samt fastställer tilldelning av Cards och Jokers.
 
-## NORMATIVT: RoundState
+# NORMATIVT: RoundState
 
 Varje Round har exakt ett av följande tillstånd:
 
@@ -21,35 +21,35 @@ Varje Round har exakt ett av följande tillstånd:
 Round är skapad och DJ är utsedd.
 
 - Ingen aktiv Performance behöver ännu finnas.
-- DJ kan starta `GUESSING`.
+- DJ kan starta Round genom att initiera första låten.
+
+När Round startas:
+
+- en Performance skapas
+- den sätts som aktiv
+- RoundState sätts till `GUESSING`
 
 ## GUESSING
 
 Round pågår.
 
 - Exakt en Performance är aktiv.
-- Players lämnar Guess.
-- DJ lämnar DJ Prediction för aktiv Performance.
-- DJ kan skapa ny Performance enligt `05-performance`.
+- Alla Players, inklusive DJ, lämnar Guess.
+- Players som inte är Ordinarie DJ får spendera Jokers.
+- DJ kan ersätta aktiv Performance enligt `05-performance`.
 
 ## LOCKED
 
 Round är låst.
 
-- Inga nya GuessParts får committas.
-- DJ Prediction är fastställd.
-- Round kan övergå till reveal.
-
-Precondition för `GUESSING → LOCKED`:
-- DJ Prediction finns för aktiv Performance.
-
-Round får återgå till `GUESSING` så länge reveal inte har påbörjats.
+- Inga nya GuessParts får skickas in.
+- Round kan låsas upp endast i tillståndet `LOCKED` och övergår då till `GUESSING`.
 
 ## REVEALED_TIMELINE
 
 Första reveal-steget är genomfört.
 
-- Tidslinje-delen är bedömd.
+- Timeline-delen är bedömd.
 - Round kan inte återgå till tidigare tillstånd.
 
 ## REVEALED_FULL
@@ -57,38 +57,70 @@ Första reveal-steget är genomfört.
 Full reveal är genomförd.
 
 - Samtliga GuessParts är bedömda.
-- Tilldelning av Cards, Jokers och DJ Stars är fastställd.
+- Tilldelning av Cards och Jokers är fastställd.
 - Round är avslutad.
 
-## NORMATIVT: Tillåtna övergångar
+`REVEALED_TIMELINE` och `REVEALED_FULL` är irreversibla tillstånd.
 
-- `WAITING_FOR_DJ → GUESSING`
-- `GUESSING → LOCKED`
-- `LOCKED → GUESSING` (upplåsning)
-- `LOCKED → REVEALED_TIMELINE`
-- `REVEALED_TIMELINE → REVEALED_FULL`
+# NORMATIVT: Tillståndsövergångar
+
+En Round får endast övergå mellan tillstånd enligt följande:
+
+- Från `WAITING_FOR_DJ` till `GUESSING`
+- Från `GUESSING` till `LOCKED`
+- Från `LOCKED` tillbaka till `GUESSING`
+- Från `LOCKED` till `REVEALED_TIMELINE`
+- Från `REVEALED_TIMELINE` till `REVEALED_FULL`
 
 Inga andra övergångar är tillåtna.
 
-## NORMATIVT: DJ
+# NORMATIVT: Aktörer
 
-- Varje Round har exakt en DJ.
-- DJ styr transitions.
-- DJ lämnar ingen Guess.
-- DJ lämnar DJ Prediction under `GUESSING`.
-- DJ initierar byte av Performance.
+- Endast DJ får starta Round (`WAITING_FOR_DJ → GUESSING`).
+- Endast DJ får låsa och låsa upp Round (`GUESSING ↔ LOCKED`).
+- Endast DJ får ersätta aktiv Performance under `GUESSING`.
+- Endast Creator får utföra DJ Takeover.
+- DJ Takeover ersätter Ordinarie DJ för aktuell Round men ändrar inte framtida DJ-rotation.
 
-## NORMATIVT: DJ Takeover
+# NORMATIVT: Tilldelning av Cards
 
-DJ Takeover innebär att Creator övertar DJ-rollen i en aktiv Round.
+Korttyp bestäms av roll (se definition av Ordinarie DJ i `01-glossary`):
 
-- Creator blir DJ för Rounden.
-- DJ Star utdelas inte i den Rounden.
-- Takeover påverkar inte tillåtna transitions.
+- Ordinarie DJ får alltid DJ Card när hen får Card.
+- Alla andra Players — inklusive Creator vid DJ Takeover — får Timeline Card.
 
-## NORMATIVT: Relation till Performance
+Tilldelning sker i två steg.
+
+Vid `REVEALED_TIMELINE`:
+- Varje Player med korrekt Timeline får 1 Card.
+
+Vid `REVEALED_FULL`:
+- Varje Player som ännu inte fått Card och har korrekt Title och Artist får 1 Card.
+
+En Player kan få högst 1 Card per Round.
+
+# NORMATIVT: Tilldelning av Jokers
+
+Joker kan tilldelas endast vid `REVEALED_FULL`.
+
+Till skillnad från Card-tilldelning finns inga rollspecifika undantag:
+alla Players, inklusive DJ, kan tilldelas Joker.
+
+En Player tilldelas 1 Joker om:
+
+- Timeline är korrekt
+- Title är korrekt
+- Artist är korrekt
+
+En Player kan vinna högst 1 Joker per Round.
+
+Regler för Joker-saldo, spendering och reducering definieras i `07-joker`.
+
+# NORMATIVT: Relation till Performance
 
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Endast aktiv Performance ligger till grund för bedömning och tilldelning.
-- Regler för skapande, byte och invalidation definieras i `05-performance`.
+- Endast den Performance som är aktiv vid övergång till `REVEALED_TIMELINE`
+  ligger till grund för bedömning och tilldelning.
+
+Regler för ersättning av Performance definieras i `05-performance`.

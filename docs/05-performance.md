@@ -2,58 +2,49 @@
 
 ## Syfte
 
-Detta dokument definierar Performance: instansen av en Recording inom en Round.
+Detta dokument definierar Performance och hur Performance används i en Round.
+
+# NORMATIVT: Definition
 
 Performance separerar spelhändelsen (Round) från den konkreta uppspelningen (Recording).
 
-## NORMATIVT: Struktur
+En Performance är den Recording som är aktuell i en Round vid ett givet tillfälle.
 
+# NORMATIVT: Struktur
+
+- Performance är en instans av en Recording.
 - En Round kan referera flera Performances över tid.
-- En Round har högst en aktiv Performance (`active_performance_id`).
-- Endast aktiv Performance ligger till grund för bedömning och tilldelning av Cards, Jokers och DJ Stars.
+- En Round har högst en aktiv Performance.
+- I tillståndet `GUESSING` ska exakt en Performance vara aktiv.
+- Endast aktiv Performance ligger till grund för bedömning och tilldelning.
 
 Performance har ingen egen state machine.
 
-## NORMATIVT: Skapande
+# NORMATIVT: Första Performance
 
-En Performance skapas under `GUESSING`.
+När en Round startas i tillståndet `WAITING_FOR_DJ`:
 
-När en ny Performance skapas:
+- en Performance skapas
+- den sätts som aktiv
+- RoundState sätts till `GUESSING`
 
-- den blir aktiv,
-- tidigare aktiv Performance upphör att vara aktiv.
+# NORMATIVT: Ersättning av Performance
 
-## NORMATIVT: Byte av Performance
+En aktiv Performance kan ersättas endast när Round är i tillståndet `GUESSING`.
 
-Byte av Performance innebär att aktiv Performance ersätts med en ny.
+Ersättning innebär att:
 
-Byte initieras av DJ.
+- en ny Performance skapas
+- den sätts som aktiv
+- den tidigare Performancen upphör att vara aktiv
 
-Byte är tillåtet endast när Round är i `GUESSING`.
+RoundState ändras inte vid ersättning.
 
-## NORMATIVT: Invalidation
+# NORMATIVT: Konsekvenser av ersättning
 
-När en Performance ersätts:
+När en Performance ersätts under `GUESSING`:
 
-- den ersatta Performancen används inte för bedömning,
-- dess Guess och DJ Prediction ligger kvar som historik,
-- endast den nya aktiva Performancen kan generera resultat.
+- Alla Guess kopplade till den ersatta Performancen upphör att gälla.
+- Alla Jokers som spenderats på den ersatta Performancen återförs till respektive Player.
 
-## NORMATIVT: Joker-refund vid byte
-
-Om en Performance ersätts under `GUESSING`:
-
-- Jokers som spenderats i Guess på den ersatta performancen återförs till respektive Player.
-- Guess på den ersatta performancen påverkar inte resultat.
-
-## NORMATIVT: Relation till Round
-
-- Round styr tillstånd och transitions.
-- Performance representerar den Recording som Round spelas på.
-- Reveal och bedömning baseras på den Performance som är aktiv vid övergång till `REVEALED_TIMELINE`.
-
-## INFORMATIVT: Motivation
-
-Performance separerar Round (spelstruktur) från Recording (konkret instans).
-
-Byte av Performance möjliggör att en Round kan referera olika Recordings utan att skapa en ny Round.
+Den nya aktiva Performancen behandlas som en ny gissningssituation.

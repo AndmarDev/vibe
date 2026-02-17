@@ -4,10 +4,9 @@
 
 Detta dokument definierar Cycle, som är varvet runt bordet i ett Game.
 
-Cycle strukturerar turordningen för DJ-rollen
-och skapar en tydlig gräns mellan varv.
+Cycle strukturerar DJ-rotation och skapar en tydlig gräns mellan varv.
 
-## NORMATIVT: CycleState
+# NORMATIVT: CycleState
 
 Varje Cycle har exakt ett av följande tillstånd:
 
@@ -43,16 +42,27 @@ Cycle är avslutad.
 
 - Inga nya Rounds skapas i denna Cycle.
 
-## NORMATIVT: DJ-rotation
+# NORMATIVT: DJ-rotation
+
+Creator är första DJ i spelet.
 
 DJ-rotation definieras per Cycle:
 
-- DJ för en Round i Cycle utses enligt Players join-ordning.
-- En Player som redan varit DJ i Cycle kan inte bli DJ igen i samma Cycle.
+- DJ utses enligt Players join-ordning.
+- En Player kan vara DJ högst en gång per Cycle.
 - Endast Players som fortfarande ingår i Game beaktas.
 
-## NORMATIVT: Relation till Round
+Rotationen påverkas inte av:
+
+- DJ Takeover
+- antal vunna Cards
+- antal Jokers
+
+DJ Takeover ändrar endast vem som leder aktuell Round och påverkar inte framtida rotationsordning.
+
+# NORMATIVT: Relation till Round
 
 - En Cycle består av 0..N Rounds.
 - En Round tillhör exakt en Cycle.
 - DJ för en Round utses enligt Cycle-rotationen.
+- Endast en aktiv Round kan finnas per Cycle vid en given tidpunkt.

@@ -2,62 +2,120 @@
 
 ## Syfte
 
-Detta dokument definierar Joker inom spelmodellen.
+Detta dokument definierar Joker.
 
-Joker är en persistent resurs som tillhör Player och kan användas under en Round.
+Joker är en begränsad resurs som en Player kan använda för att göra
+en GuessPart enklare genom att minska antalet alternativ.
 
-## NORMATIVT: Definition
+Joker förändrar aldrig korrekt svar, bedömning eller spelregler.
 
-Joker är en begränsad resurs som kan användas för att reducera
-tillgängliga alternativ i en GuessPart under `GUESSING`.
+# NORMATIVT: Definition
 
-Joker förändrar inte facit eller bedömning.
+Joker är en persistent resurs som tillhör en Player inom ett Game.
 
-## NORMATIVT: Ägarskap och saldo
+När en Joker används reduceras kandidatlistan för en GuessPart under `GUESSING`.
 
-- Joker tillhör en Player inom ett Game.
+# NORMATIVT: Joker-saldo
+
 - Varje Player har ett Joker-saldo.
-- Joker-saldo är persistent inom Game.
-- Om en Joker tilldelas när saldot redan är 3, tilldelas ingen ytterligare Joker.
+- Joker-saldo är ett heltal i intervallet 0–3.
+- Joker-saldo är persistent under hela Game.
+- Vid Game-start initialiseras varje Player med saldo 1.
 
-## NORMATIVT: Intjäning
+# NORMATIVT: Intjäning
 
-- Joker kan tilldelas en Player vid reveal enligt Joker-reglerna.
-- En Player kan vinna högst 1 Joker per Round.
-- Tilldelning sker endast i samband med `REVEALED_FULL`.
+Joker tilldelas endast vid `REVEALED_FULL`.
 
-## NORMATIVT: Användning
+En Player tilldelas 1 Joker om:
 
-Joker får användas endast när Round är i `GUESSING`.
+- Timeline är korrekt
+- Title är korrekt
+- Artist är korrekt
 
-Joker spenderas i samband med commit av en GuessPart.
+En Player kan vinna högst 1 Joker per Round.
 
-När Joker används:
-- tillgängliga alternativ reduceras före commit,
-- reduceringen gäller endast aktuell GuessPart.
+Om saldot redan är 3 sker ingen ytterligare tilldelning.
 
-Reduceringsgraden beror på hur många Jokers som spenderas
-på aktuella GuessPart.
+Villkor för när en Round genererar Joker definieras i `04-round`.
 
-1 eller 2 Jokers motsvarar två olika reduceringsnivåer.
+# NORMATIVT: Vem får använda Joker
 
-Reduceringsnivåerna är deterministiska och definieras
-per GuessPart i spelreglerna.
+- Joker får endast användas när Round är i `GUESSING`.
+- Ordinarie DJ får inte använda Joker i sin Round.
+- DJ genom DJ Takeover får använda Joker.
+- Alla övriga Players får använda Joker.
 
-Joker spenderas i det ögonblick en GuessPart committas.
-Efter commit är den spenderade Jokern förbrukad och kan inte användas igen.
-Undantag, vid byte av Performance, definieras i `05-performance`.
+Definition av Ordinarie DJ och DJ Takeover finns i `01-glossary`.
 
-## NORMATIVT: Begränsningar
+# NORMATIVT: Hur Joker används
 
-- En Player kan använda högst 2 Jokers per GuessPart.
-- En Player kan inneha högst 3 Jokers samtidigt.
-- Spenderad Joker återfås inte.
-- DJ spenderar inga Jokers i den Round där hen är DJ.
+- En Player får spendera högst 2 Jokers per GuessPart.
+- Jokers måste spenderas innan aktuell GuessPart har submittats.
+- Spenderade Jokers kan inte tas tillbaka.
+- Spenderade Jokers kan inte flyttas mellan GuessParts.
 
-Undantag vid byte av Performance definieras i `05-performance`.
+När en Joker spenderas:
 
-## INFORMATIVT: Roll i spelmodellen
+- Joker-saldot minskas omedelbart.
+- Reducering sker omedelbart.
+- Reducering är deterministisk.
+- Reducering får aldrig exkludera korrekt svar.
+- Reducering ändrar inte RoundState.
 
-Joker påverkar endast gissningssituationen och är frikopplad
-från RoundState, transitions och DJ Prediction.
+# NORMATIVT: Reducering – Timeline
+
+För GuessPart `Timeline` gäller intervallbaserad reducering.
+
+Låt korrekt år vara `y`.
+Låt `d = floor(y/10)*10`.
+
+- 0 Jokrar → ingen reducering.
+- 1 Joker → rätt decennium (`d .. d+9`).
+- 2 Jokers → rätt halva av decenniet:
+  - `d .. d+4` om sista siffran i `y` är 0–4
+  - `d+5 .. d+9` om sista siffran i `y` är 5–9
+
+Reducerad Timeline:
+
+- är deterministisk
+- får aldrig exkludera korrekt år
+- påverkar inte andra GuessParts
+
+# NORMATIVT: Reducering – Title och Artist
+
+För GuessParts `Title` och `Artist` gäller:
+
+- Ursprunglig kandidatlista innehåller exakt 10 kandidater enligt `08-candidates`.
+- Reducering sker endast inom den ursprungliga kandidatlistan.
+- Ordningen i kandidatlistan får inte ändras.
+- Korrekt kandidat måste alltid finnas kvar.
+- Nya kandidater får inte introduceras.
+
+Effekt av Joker-spend:
+
+- 1 Joker → exakt 5 kandidater återstår.
+- 2 Jokers → exakt 2 kandidater återstår.
+
+# NORMATIVT: Urvalsregel (Title/Artist)
+
+Låt ursprunglig kandidatlista vara en ordnad lista med 10 kandidater.
+Låt korrekt kandidat vara positionerad någonstans i denna lista.
+
+Reduceringsprincip:
+
+- Den reducerade listan ska alltid vara en sammanhängande delmängd av den ursprungliga listan.
+- Den reducerade listan ska alltid innehålla korrekt kandidat.
+- Vid 1 Joker väljs exakt 5 sammanhängande kandidater.
+- Vid 2 Jokers väljs exakt 2 sammanhängande kandidater.
+- Om korrekt kandidat ligger nära början eller slutet av listan förskjuts
+  urvalet så att rätt antal kandidater uppnås utan att ordningen ändras.
+
+Reducerad kandidatlista är en deterministisk funktion av:
+(ursprunglig kandidatlista, korrekt svar, antal spenderade Jokers)
+
+# NORMATIVT: Relation till Performance-byte
+
+Om Performance ersätts under `GUESSING`:
+
+- Alla Jokers som spenderats på den ersatta Performancen återförs.
+- Den nya Performancen behandlas som en ny gissningssituation.

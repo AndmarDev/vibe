@@ -66,8 +66,7 @@ De definierar:
 - spelregler (vad som är tillåtet, förbjudet och hur utfall fastställs)
 - den formella struktur som reglerna uttrycks i (tillstånd, transitions, relationer och konsekvenser)
 
-Tillsammans beskriver de både hur spelet fungerar
-och hur dess regler är strukturerade.
+Tillsammans beskriver de både hur spelet fungerar och hur dess regler är strukturerade.
 
 Övriga dokument (t.ex. Premium, responsmodell, implementation)
 får inte ändra eller omtolka denna modell.
@@ -77,13 +76,11 @@ får inte ändra eller omtolka denna modell.
 
 Dokument ska i huvudsak vara **självbärande**.
 
-Korsreferenser används endast när de är nödvändiga för förståelse,
-t.ex.:
+Korsreferenser används endast när de är nödvändiga för förståelse, t.ex.:
 - när ett dokument explicit bygger vidare på ett annat
 - när ett begrepp definieras på exakt ett ställe (glossary)
 
-Övriga samband uttrycks genom konsekvent språk,
-inte genom listor av “se även”.
+Övriga samband uttrycks genom konsekvent språk, inte genom listor av “se även”.
 
 ## Arbetsordning (prioritet)
 
@@ -114,8 +111,7 @@ AI-verktyg får inte:
 - ersätta eller omtolka befintliga begrepp
 - “fylla i” otydliga delar av modellen på eget initiativ
 
-Vid osäkerhet ska arbetet pausas och frågan lyftas till
-begreppsnivå.
+Vid osäkerhet ska arbetet pausas och frågan lyftas till begreppsnivå.
 
 ## Sammanfattning
 

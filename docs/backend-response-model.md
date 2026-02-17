@@ -2,92 +2,89 @@
 
 ## Syfte
 
-Detta dokument definierar hur spelets faktiska tillstånd
-presenteras för en specifik deltagare.
+Detta dokument definierar hur spelets faktiska tillstånd presenteras för en specifik Player.
 
 Backend skickar:
 
-- en gemensam bild av spelet (Snapshot)
-- en viewer-specifik kontext (ViewerContext)
+- Snapshot, en gemensam bild av spelet
+- ViewerContext, en viewer-specifik kontext
 
-Detta dokument definierar principen.
-Det definierar inte API-strukturen i detalj.
+Detta dokument definierar principen. Det definierar inte API-strukturen i detalj.
 
-## NORMATIVT: Snapshot
+# NORMATIVT: Snapshot
 
 Snapshot är den gemensamma bilden av spelet.
 
 Snapshot innehåller det som är objektivt synligt för alla, till exempel:
 
 - GameState
-- aktuell Cycle
-- aktuell Round och dess tillstånd
+- aktuell Cycle och dess state
+- aktuell Round och dess RoundState
 - aktuell DJ
+- aktiv Performance (utan facit före reveal)
 - synliga GuessParts
-- Cards, Jokers och DJ Stars
+- Cards (Start Card, Timeline Card, DJ Card)
+- Joker-saldo per Player
 - facit i reveal-faser
 
-Snapshot är identisk för alla viewers vid samma tidpunkt.
+Snapshot är identisk för alla Players vid samma tidpunkt.
 
 Snapshot är en representation av spelets faktiska tillstånd.
 
-## NORMATIVT: ViewerContext
+# NORMATIVT: ViewerContext
 
-ViewerContext är den del av svaret som är specifik
-för den viewer som tar emot det.
+ViewerContext är den del av svaret som är specifik för den Player som tar emot det.
 
 ViewerContext är härledd från:
 
 - Snapshot
-- viewerns identitet i Game
+- Playerns identitet i Game
 
-ViewerContext kan innehålla till exempel:
+ViewerContext kan innehålla viewer-specifik information
+som inte förändrar spelets gemensamma tillstånd, till exempel:
 
-- om viewern är DJ eller Player
-- vilken GuessPart viewern får committa härnäst
-- viewer-specifik narrowing vid Joker-användning
-- om viewern får initiera vissa actions
+- om Player är DJ
+- om Player är Creator
+- vilken GuessPart som är nästa att skickas in
+- reducerade alternativ vid Joker-spend
+- Playerns aktuella Joker-saldo
+- om DJ Takeover är aktiv i aktuell Round
 
-ViewerContext är inte ett eget spelobjekt.
-Det lagras inte som primär state.
-
-Exakt struktur definieras i API-kontraktet.
-
-## NORMATIVT: Ansvar
+# NORMATIVT: Ansvar
 
 Backend:
 
 - beräknar Snapshot
 - beräknar ViewerContext
 - validerar alla actions mot spelets regler
+- är authoritative
 
 Frontend:
 
-- renderar från: Snapshot + ViewerContext
+- renderar från Snapshot + ViewerContext
 - skickar actions
 - implementerar inga egna spelregler
 
-Backend är alltid authoritative.
-
-## NORMATIVT: Reveal och informationsgränser
+# NORMATIVT: Reveal och informationsgränser
 
 Före reveal:
 
 - Snapshot får inte innehålla facit.
-- ViewerContext får inte innehålla facit-signaler.
+- ViewerContext får inte innehålla facit eller indirekta facit-signaler.
 
-Under `GUESSING` får backend skicka viewer-specifik
-hjälpinformation (t.ex. narrowing), men aldrig resultat.
+Under `GUESSING` får backend skicka viewer-specifik hjälpinformation
+(t.ex. reducerade alternativ via Joker), men aldrig korrekt svar.
 
-## INFORMATIVT: Motivation
+Vid `REVEALED_TIMELINE`:
 
-Spelets tillstånd är gemensamt.
-Det som visas kan skilja sig mellan deltagare.
+- Korrekt Timeline-facit är synligt.
+- Cards för korrekt Timeline är synliga.
+- Dessa Cards påverkas inte av senare reveal-steg.
+- Inga Jokers tilldelas i detta steg.
 
-Genom att skilja på Snapshot och ViewerContext kan backend:
+Vid `REVEALED_FULL`:
 
-- visa olika information för olika deltagare
-- dölja facit före reveal
-- stödja reconnect utan specialfall
-
-Frontend behöver då endast rendera det den får.
+- Samtliga GuessParts och korrekt svar är synliga.
+- Cards för Title + Artist (för Players som ännu inte fått Card) är synliga.
+- Tilldelade Jokers är synliga.
+- Uppdaterade Joker-saldon är synliga.
