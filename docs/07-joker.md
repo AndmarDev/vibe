@@ -41,11 +41,10 @@ Villkor för när en Round genererar Joker definieras i `04-round`.
 # NORMATIVT: Vem får använda Joker
 
 - Joker får endast användas när Round är i `GUESSING`.
-- Ordinarie DJ får inte använda Joker i sin Round.
-- DJ genom DJ Takeover får använda Joker.
-- Alla övriga Players får använda Joker.
+- Scheduled DJ får inte använda Joker i sin Round.
+- Alla andra Players får använda Joker, inklusive Creator vid DJ Takeover.
 
-Definition av Ordinarie DJ och DJ Takeover finns i `01-glossary`.
+Definition av Scheduled DJ och DJ Takeover finns i `01-glossary`.
 
 # NORMATIVT: Hur Joker används
 

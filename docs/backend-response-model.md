@@ -20,7 +20,8 @@ Snapshot innehåller det som är objektivt synligt för alla, till exempel:
 - GameState
 - aktuell Cycle och dess state
 - aktuell Round och dess RoundState
-- aktuell DJ
+- Scheduled DJ
+- Acting DJ
 - aktiv Performance (utan facit före reveal)
 - synliga GuessParts
 - Cards (Start Card, Timeline Card, DJ Card)
@@ -43,12 +44,12 @@ ViewerContext är härledd från:
 ViewerContext kan innehålla viewer-specifik information
 som inte förändrar spelets gemensamma tillstånd, till exempel:
 
-- om Player är DJ
+- om Player är Scheduled DJ
+- om Player är Acting DJ
 - om Player är Creator
 - vilken GuessPart som är nästa att skickas in
 - reducerade alternativ vid Joker-spend
 - Playerns aktuella Joker-saldo
-- om DJ Takeover är aktiv i aktuell Round
 
 # NORMATIVT: Ansvar
 

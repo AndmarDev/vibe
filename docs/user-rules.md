@@ -22,6 +22,8 @@ DJ (Disk Jockey) är den som spelar upp låten i rundan.
 Creator börjar som DJ.
 Därefter roterar DJ-rollen i den ordning spelarna gick med i spelet.
 
+Om DJ inte kan fortsätta kan Creator ta över som DJ för den rundan.
+
 ## Så fungerar en runda
 
 Varje runda spelas på en låt.
@@ -49,7 +51,7 @@ Det finns tre typer av kort:
 
 - **Startkort** – ditt första årtal.
 - **Tidslinjekort** – läggs in i din tidslinje när du gissar rätt.
-- **DJ-kort** – vinns när DJ gissar rätt. DJ-kort räknas som kort men placeras inte i tidslinjen.
+- **DJ-kort** – vinns när DJ får ett kort i sin egen runda. DJ-kort räknas som kort men placeras inte i tidslinjen.
 
 Alla kort räknas lika när ni avgör vem som vinner.
 
@@ -58,8 +60,11 @@ Alla kort räknas lika när ni avgör vem som vinner.
 Du kan få **högst ett kort per runda**.
 
 Korten delas ut under reveal (se ovan).
-Om du är DJ i rundan och får kort blir det ett **DJ-kort**.
-I alla andra fall blir det ett **Tidslinjekort**.
+
+Om du är DJ i rundan och får ett kort blir det ett **DJ-kort**.
+Om Creator har tagit över som DJ blir kortet istället ett **tidslinjekort**.
+
+I alla andra fall blir kortet ett **tidslinjekort**.
 
 ## Jokrar
 
@@ -67,7 +72,8 @@ Jokrar är ett hjälpmedel när du gissar.
 
 - Du kan använda upp till 2 jokrar på samma delgissning.
 - Du kan ha högst 3 jokrar samtidigt.
-- Om du är DJ i rundan får du inte använda jokrar.
+- Om du är DJ på tur i rundan får du inte använda jokrar.
+- Om Creator tar över som DJ kan Creator fortfarande använda jokrar.
 
 Om DJ byter låt innan rundan låses får du tillbaka de jokrar du använt på den låten.
 

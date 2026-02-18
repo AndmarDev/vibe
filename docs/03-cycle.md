@@ -19,10 +19,10 @@ Varje Cycle har exakt ett av följande tillstånd:
 Cycle pågår.
 
 - Rounds skapas sekventiellt.
-- För varje Round i denna Cycle utses exakt en DJ.
-- En Player är DJ högst en gång per Cycle.
+- För varje Round i denna Cycle utses exakt en Scheduled DJ.
+- En Player är Scheduled DJ högst en gång per Cycle.
 
-När alla kvarvarande Players har varit DJ, och sista Round
+När alla kvarvarande Players har varit Scheduled DJ, och sista Round
 i Cycle är avslutad, övergår Cycle till `BOUNDARY_DECISION`.
 
 ## BOUNDARY_DECISION
@@ -44,12 +44,12 @@ Cycle är avslutad.
 
 # NORMATIVT: DJ-rotation
 
-Creator är första DJ i spelet.
+Creator är första Scheduled DJ i spelet.
 
-DJ-rotation definieras per Cycle:
+Cycle-rotationen utser Scheduled DJ för varje Round:
 
-- DJ utses enligt Players join-ordning.
-- En Player kan vara DJ högst en gång per Cycle.
+- Scheduled DJ utses enligt Players join-ordning.
+- En Player kan vara Scheduled DJ högst en gång per Cycle.
 - Endast Players som fortfarande ingår i Game beaktas.
 
 Rotationen påverkas inte av:
@@ -58,11 +58,11 @@ Rotationen påverkas inte av:
 - antal vunna Cards
 - antal Jokers
 
-DJ Takeover ändrar endast vem som leder aktuell Round och påverkar inte framtida rotationsordning.
+DJ Takeover ändrar endast vem som är Acting DJ i aktuell Round.
 
 # NORMATIVT: Relation till Round
 
 - En Cycle består av 0..N Rounds.
 - En Round tillhör exakt en Cycle.
-- DJ för en Round utses enligt Cycle-rotationen.
+- Scheduled DJ för en Round utses enligt Cycle-rotationen.
 - Endast en aktiv Round kan finnas per Cycle vid en given tidpunkt.

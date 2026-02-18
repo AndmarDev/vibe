@@ -23,12 +23,12 @@ En spelomgång där Players deltar och Rounds spelas inom Cycles.
 ## Cycle
 
 **Definition:**
-Ett varv runt bordet där varje Player är DJ exakt en gång.
+Ett varv runt bordet där varje Player är Scheduled DJ exakt en gång.
 
 **Egenskaper:**
 - Cycle består av Rounds.
 - DJ-rotation sker per Round.
-- En Player är DJ en gång per Cycle.
+- En Player är Scheduled DJ en gång per Cycle.
 - Cycle är struktur, inte spelhändelse.
 
 ## Round
@@ -37,7 +37,7 @@ Ett varv runt bordet där varje Player är DJ exakt en gång.
 En spelhändelse där en Performance är aktiv, Players lämnar Guesses och resultat fastställs.
 
 **Egenskaper:**
-- Round har exakt en DJ.
+- Round har exakt en Scheduled DJ och exakt en Acting DJ.
 - Round har en state machine.
 - Round kan referera flera Performances över tid.
 - Round äger transitions och fastställer tilldelning av Cards och Jokers.
@@ -64,26 +64,26 @@ En deltagare i ett Game.
 - Player är inte ett konto eller device.
 - Player kan gissa, vara DJ, samt vinna Cards och Jokers.
 
-## DJ
+## Scheduled DJ
 
 **Definition:**
-Den Player som är utsedd att leda en specifik Round.
+Den Player som är utsedd att vara DJ för en Round enligt Cycle-rotationen.
 
 **Egenskaper:**
-- Varje Round har exakt en DJ.
-- DJ leder Roundens flöde enligt reglerna i `04-round`.
-- DJ lämnar Guess som övriga Players.
-- DJ får inte spendera Jokers i den Round där hen är DJ.
-- När DJ tilldelas Card i sin Round är kortet ett DJ Card (utom vid DJ Takeover).
+- Varje Round har exakt en Scheduled DJ.
+- Scheduled DJ bestäms av reglerna i `03-cycle`.
+- DJ-specialregler (DJ Card och joker-förbud) är knutna till Scheduled DJ.
 
-## Ordinarie DJ
+## Acting DJ
 
 **Definition:**
-Den Player som utses till DJ genom Cycle-rotation enligt `03-cycle`.
+Den Player som faktiskt leder Rounden.
 
 **Egenskaper:**
-- Ordinarie DJ är den normala DJ-rollen i en Round.
-- DJ genom DJ Takeover är inte Ordinarie DJ.
+- Varje Round har exakt en Acting DJ.
+- Utan DJ Takeover är Acting DJ = Scheduled DJ.
+- Vid DJ Takeover är Acting DJ = Creator (Scheduled DJ är oförändrad).
+- Behörighetsregler för start/lås/ersätt gäller Acting DJ (se `04-round`).
 
 ## Creator
 
@@ -99,14 +99,13 @@ Den Player som skapade Game.
 ## DJ Takeover
 
 **Definition:**
-Creator övertar DJ-rollen i en aktiv Round.
+Creator övertar ledningen av en aktiv Round.
 
 **Egenskaper:**
-- Creator blir DJ för Rounden.
-- Creator lämnar Guess som övriga Players.
-- Creator kan inte tilldelas DJ Card i den Rounden.
-- Om Creator gissar korrekt under Takeover, tilldelas hen ett Timeline Card.
+- Creator blir Acting DJ.
+- Scheduled DJ för Rounden ändras inte.
 - Takeover påverkar inte framtida DJ-rotation.
+- DJ-specialreglerna fortsätter gälla Scheduled DJ (se `04-round` och `07-joker`).
 
 ## Guess
 
@@ -173,7 +172,7 @@ Ett Card som genereras av en Round när en Player uppfyller villkoren för korre
 ## DJ Card
 
 **Definition:**
-Ett Card som genereras när DJ lämnar en korrekt Guess i en Round utan DJ Takeover.
+Ett Card som genereras när Scheduled DJ får Card i sin Round.
 
 **Egenskaper:**
 - Räknas som Card i total Card count.
@@ -226,7 +225,7 @@ En kuraterad samling av Songs.
 
 - Game består av Cycles.
 - Cycle består av Rounds.
-- Round har exakt en DJ.
+- Round har exakt en Scheduled DJ och exakt en Acting DJ.
 - Högst en Performance är aktiv per Round.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokers genereras genom Round.

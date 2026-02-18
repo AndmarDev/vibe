@@ -21,7 +21,7 @@ Varje Round har exakt ett av följande tillstånd:
 Round är skapad och DJ är utsedd.
 
 - Ingen aktiv Performance behöver ännu finnas.
-- DJ kan starta Round genom att initiera första låten.
+- Acting DJ kan starta Round genom att initiera första låten.
 
 När Round startas:
 
@@ -34,9 +34,9 @@ När Round startas:
 Round pågår.
 
 - Exakt en Performance är aktiv.
-- Alla Players, inklusive DJ, lämnar Guess.
-- Players som inte är Ordinarie DJ får spendera Jokers.
-- DJ kan ersätta aktiv Performance enligt `05-performance`.
+- Alla Players, inklusive Scheduled DJ, lämnar Guess.
+- Players som inte är Scheduled DJ får spendera Jokers.
+- Acting DJ kan ersätta aktiv Performance enligt `05-performance`.
 
 ## LOCKED
 
@@ -76,18 +76,22 @@ Inga andra övergångar är tillåtna.
 
 # NORMATIVT: Aktörer
 
-- Endast DJ får starta Round (`WAITING_FOR_DJ → GUESSING`).
-- Endast DJ får låsa och låsa upp Round (`GUESSING ↔ LOCKED`).
-- Endast DJ får ersätta aktiv Performance under `GUESSING`.
+- Endast Acting DJ får starta Round (`WAITING_FOR_DJ → GUESSING`).
+- Endast Acting DJ får låsa och låsa upp Round (`GUESSING ↔ LOCKED`).
+- Endast Acting DJ får ersätta aktiv Performance under `GUESSING`.
 - Endast Creator får utföra DJ Takeover.
-- DJ Takeover ersätter Ordinarie DJ för aktuell Round men ändrar inte framtida DJ-rotation.
+
+DJ Takeover:
+- Vid Takeover blir Creator Acting DJ.
+- Scheduled DJ för Rounden ändras inte.
+- Takeover påverkar inte framtida DJ-rotation.
 
 # NORMATIVT: Tilldelning av Cards
 
-Korttyp bestäms av roll (se definition av Ordinarie DJ i `01-glossary`):
+Korttyper:
 
-- Ordinarie DJ får alltid DJ Card när hen får Card.
-- Alla andra Players — inklusive Creator vid DJ Takeover — får Timeline Card.
+- Scheduled DJ får DJ Card, när hen får Card.
+- Alla andra Players får Timeline Card, när de får Card.
 
 Tilldelning sker i två steg.
 
@@ -104,7 +108,7 @@ En Player kan få högst 1 Card per Round.
 Joker kan tilldelas endast vid `REVEALED_FULL`.
 
 Till skillnad från Card-tilldelning finns inga rollspecifika undantag:
-alla Players, inklusive DJ, kan tilldelas Joker.
+alla Players, inklusive Scheduled DJ, kan tilldelas Joker.
 
 En Player tilldelas 1 Joker om:
 
