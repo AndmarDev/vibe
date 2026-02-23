@@ -4,16 +4,9 @@
 
 Detta dokument definierar Joker.
 
-Joker är en begränsad resurs som en Player kan använda för att göra
-en GuessPart enklare genom att minska antalet alternativ.
+Joker är en resurs som en Player kan använda för att minska antalet alternativ i en GuessPart.
 
-Joker förändrar aldrig korrekt svar, bedömning eller spelregler.
-
-# NORMATIVT: Definition
-
-Joker är en persistent resurs som tillhör en Player inom ett Game.
-
-När en Joker används reduceras kandidatlistan för en GuessPart under `GUESSING`.
+Joker ändrar aldrig korrekt svar eller bedömning.
 
 # NORMATIVT: Joker-saldo
 
@@ -26,7 +19,7 @@ När en Joker används reduceras kandidatlistan för en GuessPart under `GUESSIN
 
 Joker tilldelas endast vid `REVEALED_FULL`.
 
-En Player tilldelas 1 Joker om:
+En Player vinner 1 Joker i `REVEALED_FULL` om:
 
 - Timeline är korrekt
 - Title är korrekt
@@ -34,87 +27,70 @@ En Player tilldelas 1 Joker om:
 
 En Player kan vinna högst 1 Joker per Round.
 
-Om saldot redan är 3 sker ingen ytterligare tilldelning.
+Regler för hur vinsten påverkar Joker-saldot definieras nedan.
 
-Villkor för när en Round genererar Joker definieras i `04-round`.
+# NORMATIVT: Uppdatering av Joker-saldo vid Round-avslut
 
-# NORMATIVT: Vem får använda Joker
+När en Round övergår till `REVEALED_FULL` uppdateras
+varje kvarvarande Players Joker-saldo så här:
 
-- Joker får endast användas när Round är i `GUESSING`.
-- Scheduled DJ får inte använda Joker i sin Round.
-- Alla andra Players får använda Joker, inklusive Creator vid DJ Takeover.
+1. Först minskas saldot med antalet Jokrar som Playern har registrerade för Roundens aktiva Performance.
+2. Därefter ökas saldot med antalet Jokrar som Playern vinner i `REVEALED_FULL` (0 eller 1).
+3. Efter båda stegen begränsas saldot till maximalt 3.
 
-Definition av Scheduled DJ och DJ Takeover finns i `01-glossary`.
+Användning som har annullerats (Performance-byte eller `ABORTED`)
+räknas inte och ger därför ingen minskning.
 
-# NORMATIVT: Hur Joker används
+# NORMATIVT: Användning
 
-- En Player får spendera högst 2 Jokers per GuessPart.
-- Jokers måste spenderas innan aktuell GuessPart har submittats.
-- Spenderade Jokers kan inte tas tillbaka.
-- Spenderade Jokers kan inte flyttas mellan GuessParts.
+- Joker får användas endast när Round är i `GUESSING`.
+- När en Player använder en Joker under `GUESSING` registreras den för den aktuella Roundens aktiva Performance.
+- Joker-saldot (det publika saldot) minskar först när Rounden avslutas i `REVEALED_FULL`.
+- Under `GUESSING` får en Player inte använda fler Jokrar än vad Playerns publika Joker-saldo tillåter.
+- Jokrar som redan har använts i den aktiva Performancen räknas av från vad som fortfarande får användas i samma Round.
+- En Player får använda högst 2 Jokrar per GuessPart.
 
-När en Joker spenderas:
+Om en Player tas bort från Game innan Rounden når `REVEALED_FULL`
+ignoreras all registrerad Joker-användning för den Playern.
+Det innebär att borttagna Players Joker-saldo inte påverkas av Rounden.
 
-- Joker-saldot minskas omedelbart.
-- Reducering sker omedelbart.
-- Reducering är deterministisk.
-- Reducering får aldrig exkludera korrekt svar.
-- Reducering ändrar inte RoundState.
+# NORMATIVT: Effekt per GuessPart
 
-# NORMATIVT: Reducering – Timeline
+## Timeline
 
-För GuessPart `Timeline` gäller intervallbaserad reducering.
+För GuessPart `Timeline` ger Joker ett tidsintervall som innehåller rätt år.
 
-Låt korrekt år vara `y`.
-Låt `d = floor(y/10)*10`.
+När en Player använder Jokrar på `Timeline` gäller:
 
-- 0 Jokrar → ingen reducering.
-- 1 Joker → rätt decennium (`d .. d+9`).
-- 2 Jokers → rätt halva av decenniet:
-  - `d .. d+4` om sista siffran i `y` är 0–4
-  - `d+5 .. d+9` om sista siffran i `y` är 5–9
+- 0 Jokrar → inget tidsintervall visas.
+- 1 Joker → tidsintervallet är hela rätt decennium (t.ex. 1980–1989).
+- 2 Jokrar → tidsintervallet är rätt halva av decenniet (t.ex. 1980–1984 eller 1985–1989).
 
-Reducerad Timeline:
+Tidsintervallet:
 
-- är deterministisk
-- får aldrig exkludera korrekt år
+- innehåller alltid korrekt år
+- påverkar inte bedömningen
 - påverkar inte andra GuessParts
 
-# NORMATIVT: Reducering – Title och Artist
+## Title och Artist
 
-För GuessParts `Title` och `Artist` gäller:
+För Title och Artist minskar Joker antalet alternativ som visas.
 
-- Ursprunglig kandidatlista innehåller exakt 10 kandidater enligt `08-candidates`.
-- Reducering sker endast inom den ursprungliga kandidatlistan.
-- Ordningen i kandidatlistan får inte ändras.
-- Korrekt kandidat måste alltid finnas kvar.
-- Nya kandidater får inte introduceras.
+Alternativen kommer från kandidatpaketet i `08-candidates`.
 
-Effekt av Joker-spend:
-
-- 1 Joker → exakt 5 kandidater återstår.
-- 2 Jokers → exakt 2 kandidater återstår.
-
-# NORMATIVT: Urvalsregel (Title/Artist)
-
-Låt ursprunglig kandidatlista vara en ordnad lista med 10 kandidater.
-Låt korrekt kandidat vara positionerad någonstans i denna lista.
-
-Reduceringsprincip:
-
-- Den reducerade listan ska alltid vara en sammanhängande delmängd av den ursprungliga listan.
-- Den reducerade listan ska alltid innehålla korrekt kandidat.
-- Vid 1 Joker väljs exakt 5 sammanhängande kandidater.
-- Vid 2 Jokers väljs exakt 2 sammanhängande kandidater.
-- Om korrekt kandidat ligger nära början eller slutet av listan förskjuts
-  urvalet så att rätt antal kandidater uppnås utan att ordningen ändras.
-
-Reducerad kandidatlista är en deterministisk funktion av:
-(ursprunglig kandidatlista, korrekt svar, antal spenderade Jokers)
+- 0 Jokrar → visa `candidates10` (10 alternativ)
+- 1 Joker → visa `candidates5` (5 alternativ)
+- 2 Jokrar → visa `candidates2` (2 alternativ)
 
 # NORMATIVT: Relation till Performance-byte
 
-Om Performance ersätts under `GUESSING`:
+Om Performance ersätts under `GUESSING` annulleras alla Jokrar som använts i den Performancen.
 
-- Alla Jokers som spenderats på den ersatta Performancen återförs.
-- Den nya Performancen behandlas som en ny gissningssituation.
+Användningen påverkar då inte Joker-saldot.
+
+# NORMATIVT: Relation till avbruten Round
+
+Om en Round övergår till `ABORTED` påverkar användningen av Jokrar i Rounden inte Joker-saldot.
+
+Detsamma gäller för en Player som tas bort innan `REVEALED_FULL`:
+registrerad Joker-användning för den Playern påverkar inte saldot.

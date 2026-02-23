@@ -112,8 +112,10 @@ Normativ auktoritet får aldrig spridas över flera dokument.
 - Föredra precision framför pedagogik.
 - Undvik metaforer.
 - Undvik framtidslöften (“senare”, “i V2”).
-- Skriv som om dokumenten ska läsas om ett år,
-  utan tillgång till dagens kontext.
+- Skriv som om dokumenten ska läsas om ett år, utan tillgång till dagens kontext.
+- Föredra klarspråk framför formell eller teknisk tyngd.
+- Beskriv regler som normala flöden; dramatisera inte edge cases.
+- Undvik algoritmiska beskrivningar om inte exakt beräkningsregel är nödvändig för modellen.
 
 ## Sammanfattning
 

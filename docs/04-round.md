@@ -2,9 +2,13 @@
 
 ## Syfte
 
-Detta dokument definierar Round, som är spelhändelsen för en Performance inom en Cycle.
+Detta dokument definierar Round.
 
-Round äger sin state machine, reveal samt fastställer tilldelning av Cards och Jokers.
+En Round är den spelhändelse där en Performance spelas,
+Players lämnar Guess och resultat fastställs.
+
+Round äger sin state machine och fastställer
+tilldelning av Cards och Jokrar.
 
 # NORMATIVT: RoundState
 
@@ -15,13 +19,13 @@ Varje Round har exakt ett av följande tillstånd:
 - `LOCKED`
 - `REVEALED_TIMELINE`
 - `REVEALED_FULL`
+- `ABORTED`
 
 ## WAITING_FOR_DJ
 
-Round är skapad och DJ är utsedd.
+Round är skapad och en DJ är utsedd.
 
-- Ingen aktiv Performance behöver ännu finnas.
-- Acting DJ kan starta Round genom att initiera första låten.
+DJ kan starta Round genom att initiera första låten.
 
 När Round startas:
 
@@ -34,22 +38,27 @@ När Round startas:
 Round pågår.
 
 - Exakt en Performance är aktiv.
-- Alla Players, inklusive Scheduled DJ, lämnar Guess.
-- Players som inte är Scheduled DJ får spendera Jokers.
-- Acting DJ kan ersätta aktiv Performance enligt `05-performance`.
+- Alla kvarvarande Players, inklusive DJ, lämnar Guess.
+- Alla kvarvarande Players får använda Jokrar enligt `07-joker`.
+  DJ är undantagen och får inte använda Jokrar.
+- DJ kan ersätta aktiv Performance (byta låt) enligt `05-performance`.
+
+DJ kan spela låten flera gånger under detta tillstånd.
 
 ## LOCKED
 
 Round är låst.
 
 - Inga nya GuessParts får skickas in.
-- Round kan låsas upp endast i tillståndet `LOCKED` och övergår då till `GUESSING`.
+- DJ kan låsa upp Round som då återgår till `GUESSING`.
 
 ## REVEALED_TIMELINE
 
 Första reveal-steget är genomfört.
 
-- Timeline-delen är bedömd.
+- Korrekt år är synligt.
+- Timeline är bedömd.
+- Eventuella Cards för korrekt Timeline är tilldelade.
 - Round kan inte återgå till tidigare tillstånd.
 
 ## REVEALED_FULL
@@ -57,60 +66,135 @@ Första reveal-steget är genomfört.
 Full reveal är genomförd.
 
 - Samtliga GuessParts är bedömda.
-- Tilldelning av Cards och Jokers är fastställd.
+- Eventuella återstående Cards är tilldelade.
+- Eventuella Jokrar är tilldelade.
+- Joker-saldon fastställs i detta tillstånd.
 - Round är avslutad.
 
-`REVEALED_TIMELINE` och `REVEALED_FULL` är irreversibla tillstånd.
+`REVEALED_TIMELINE` och `REVEALED_FULL` är irreversibla.
+
+## ABORTED
+
+Rounden är avbruten.
+
+- Inga fler transitions sker i Rounden.
+- Ingen bedömning eller tilldelning sker för Rounden.
+- Spelet går vidare till nästa Round.
+- Joker-saldo påverkas inte, se `07-joker`.
 
 # NORMATIVT: Tillståndsövergångar
 
-En Round får endast övergå mellan tillstånd enligt följande:
+En Round övergår mellan tillstånd enligt följande:
 
-- Från `WAITING_FOR_DJ` till `GUESSING`
-- Från `GUESSING` till `LOCKED`
-- Från `LOCKED` tillbaka till `GUESSING`
-- Från `LOCKED` till `REVEALED_TIMELINE`
-- Från `REVEALED_TIMELINE` till `REVEALED_FULL`
+- `WAITING_FOR_DJ` → `GUESSING`
+- `GUESSING` → `LOCKED`
+- `LOCKED` → `GUESSING` (upplåsning)
+- `LOCKED` → `REVEALED_TIMELINE`
+- `REVEALED_TIMELINE` → `REVEALED_FULL`
+- `WAITING_FOR_DJ` → `ABORTED`
+- `GUESSING` → `ABORTED`
+- `LOCKED` → `ABORTED`
+
+En Round kan också bli `ABORTED`:
+- när Creator avslutar Game, se `02-game`
+- om spelets indata är ogiltig, t.ex. om kandidatpaketet
+  för Title/Artist inte uppfyller kraven i `08-candidates`
 
 Inga andra övergångar är tillåtna.
 
-# NORMATIVT: Aktörer
+# NORMATIVT: DJ
 
-- Endast Acting DJ får starta Round (`WAITING_FOR_DJ → GUESSING`).
-- Endast Acting DJ får låsa och låsa upp Round (`GUESSING ↔ LOCKED`).
-- Endast Acting DJ får ersätta aktiv Performance under `GUESSING`.
-- Endast Creator får utföra DJ Takeover.
+DJ leder ceremonin i en Round. Det innebär att DJ:
 
-DJ Takeover:
-- Vid Takeover blir Creator Acting DJ.
-- Scheduled DJ för Rounden ändras inte.
-- Takeover påverkar inte framtida DJ-rotation.
+- startar Round
+- spelar upp låten
+- låser och låser upp Round
+- initierar reveal
+
+Om DJ tas bort kan Creator leda ceremonin enligt regler nedan.
+
+# NORMATIVT: Borttagning av Player
+
+Om Creator tar bort en Player medan Round pågår:
+
+- Playern räknas inte längre som deltagare i Rounden.
+- Playerns Guess ignoreras från och med borttagningen.
+- Playern kan inte få Card eller Joker i Rounden.
+
+Utsedd DJ ändras inte av borttagning.
+
+Om borttagen Player är DJ gäller:
+
+- I state `WAITING_FOR_DJ` avbryts Rounden, dvs den övergår till `ABORTED`.
+- I state `GUESSING` kan Creator:
+  - spela upp låten,
+  - låsa Round,
+  - eller avbryta Rounden.
+- I state `LOCKED` kan Creator:
+  - initiera `REVEALED_TIMELINE`,
+  - låsa upp Round (till `GUESSING`),
+  - eller avbryta Rounden.
+- I state `REVEALED_TIMELINE` kan Creator initiera `REVEALED_FULL`.
+- I state `REVEALED_FULL` påverkas inget.
+
+När Creator leder ceremonin i dessa fall räknas Creator inte som DJ.
+
+Registrerad Joker-användning för en Player som tas bort innan `REVEALED_FULL`
+ignoreras och påverkar inte Joker-saldot.
+
+# NORMATIVT: Bedömning av GuessParts
+
+Bedömning sker vid reveal och gäller den Performance som är aktiv när Round går till `REVEALED_TIMELINE`.
+
+## Timeline
+
+En Player gissar Timeline genom att placera låten i sin egen timeline.
+
+Placeringen är korrekt om låtens år hamnar i rätt ordning relativt Playerns närmaste Cards på båda sidor:
+
+- året är större än eller lika med året på närmaste Card på vänster sida, och
+- året är mindre än eller lika med året på närmaste Card på höger sida.
+
+Om placeringen bryter mot ordningen är Timeline inkorrekt.
+
+## Title och Artist
+
+Title och Artist bedöms som korrekt om Playern har valt det
+korrekta alternativet (korrekt kandidat) för respektive GuessPart.
+
+Kandidatpaket definieras i `08-candidates`.
 
 # NORMATIVT: Tilldelning av Cards
 
-Korttyper:
-
-- Scheduled DJ får DJ Card, när hen får Card.
-- Alla andra Players får Timeline Card, när de får Card.
+Endast kvarvarande Players kan tilldelas Card.
+En Player som har tagits bort före tilldelningstidpunkten (se nedan)
+kan aldrig få Card i Rounden.
 
 Tilldelning sker i två steg.
 
 Vid `REVEALED_TIMELINE`:
-- Varje Player med korrekt Timeline får 1 Card.
+
+- Varje kvarvarande Player med korrekt Timeline får 1 Card.
 
 Vid `REVEALED_FULL`:
-- Varje Player som ännu inte fått Card och har korrekt Title och Artist får 1 Card.
+
+- Varje kvarvarande Player som ännu inte fått Card
+  och har korrekt Title och Artist får 1 Card.
 
 En Player kan få högst 1 Card per Round.
 
-# NORMATIVT: Tilldelning av Jokers
+Om den Player som är utsedd DJ får Card i sin egen Round
+är kortet ett DJ Card.
+I alla andra fall är det ett Timeline Card.
+
+# NORMATIVT: Tilldelning av Jokrar
 
 Joker kan tilldelas endast vid `REVEALED_FULL`.
 
-Till skillnad från Card-tilldelning finns inga rollspecifika undantag:
-alla Players, inklusive Scheduled DJ, kan tilldelas Joker.
+Endast kvarvarande Players kan tilldelas Joker.
+En Player som har tagits bort före `REVEALED_FULL` kan aldrig vinna Joker i Rounden.
 
-En Player tilldelas 1 Joker om:
+En kvarvarande Player tilldelas 1 Joker om:
 
 - Timeline är korrekt
 - Title är korrekt
@@ -118,13 +202,12 @@ En Player tilldelas 1 Joker om:
 
 En Player kan vinna högst 1 Joker per Round.
 
-Regler för Joker-saldo, spendering och reducering definieras i `07-joker`.
+Regler för Joker-användning under `GUESSING` samt uppdatering
+av Joker-saldo vid `REVEALED_FULL` definieras i `07-joker`.
 
 # NORMATIVT: Relation till Performance
 
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Endast den Performance som är aktiv vid övergång till `REVEALED_TIMELINE`
-  ligger till grund för bedömning och tilldelning.
-
-Regler för ersättning av Performance definieras i `05-performance`.
+- Endast den Performance som är aktiv vid övergång till
+  `REVEALED_TIMELINE` ligger till grund för bedömning.

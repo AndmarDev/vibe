@@ -2,131 +2,70 @@
 
 ## Syfte
 
-Detta dokument definierar kandidatlistor för GuessParts.
+Detta dokument definierar kandidatpaket för GuessParts.
 
-Kandidatmodellen är en del av spelreglernas fairness och determinism,
-men påverkar inte state machines eller tilldelning av Cards/Jokers.
+Kandidatpaket används för Title och Artist.
+Timeline omfattas inte av detta dokument.
 
 Dokument 01–07 definierar spelregler.
-Detta dokument definierar hur valmöjligheter konstrueras.
+Detta dokument definierar vilka alternativ som presenteras.
 
-# NORMATIVT: Kandidatlista
+# NORMATIVT: Kandidatpaket
 
-Varje GuessPart presenteras som en kandidatlista.
+För varje aktiv Performance och GuessPart (Title och Artist)
+ska backend generera ett kandidatpaket.
 
-En kandidatlista:
+Ett kandidatpaket består av tre listor i fast ordning:
 
-- är gemensam för alla Players i samma Round
-- tillhör exakt en (Performance, GuessPart)
-- är deterministisk
-- är en del av den normativa modellen
+- `candidates10` (exakt 10 alternativ)
+- `candidates5` (exakt 5 alternativ)
+- `candidates2` (exakt 2 alternativ)
 
-Kandidatlistan är gemensam state, inte viewer-specifik.
+Alla tre listor är gemensamma för alla Players i samma Round.
 
-# NORMATIVT: Ursprunglig storlek
-
-Ursprunglig kandidatlista för varje GuessPart innehåller exakt 10 kandidater.
-
-- Kandidater får inte upprepas.
-- Korrekt svar måste alltid ingå.
-- Antalet 10 är normativt och får inte variera.
-
-Reducerad kandidatlista (efter Joker-spend) kan innehålla färre än 10 kandidater.
-
-Reducerad kandidatlista:
-
-- får aldrig exkludera korrekt alternativ
-- får endast vara en delmängd av den ursprungliga kandidatlistan
-
-# NORMATIVT: Determinism
-
-Kandidatlistan är en deterministisk funktion av:
-
-(Performance, GuessPart)
-
-Det innebär:
-
-- Samma (Performance, GuessPart) ger exakt samma kandidatlista.
-- Kandidatlistan får inte bero på Player-identitet.
-- Kandidatlistan får inte bero på tidigare Rounds.
-- Kandidatlistan får inte bero på klienttillstånd.
-- Kandidatlistan får inte variera mellan plattformar eller versioner.
-- Kandidatlistan får inte bero på slump.
-
-Ordning är en del av modellen.
-
-# NORMATIVT: Fairness-constraint
-
-Kandidatlistor får inte trivialiseras av perceptuella kontraster.
-
-Det innebär att kandidatlistan inte får konstrueras så att:
-
-- facit är den enda kandidaten av en tydlig perceptuell kategori
-- facit framstår som uppenbart genom extrem kontrast mot övriga kandidater
-
-Exempel på otillåtna situationer:
-
-- 9 kvinnliga soloartister och 1 manlig soloartist där facit är manlig
-- 9 soloartister och 1 grupp där facit är grupp
-- 9 låtar på svenska och 1 på engelska där facit är den enda engelska
-
-Fairness-constrainten:
-
-- förbjuder trivialiserande kontraster
-- kräver inte total homogenitet
-- gäller per kandidatlista
-- är inte ett krav på statistisk balans över flera Rounds
+Kandidatpaketet är indata till spelreglerna.
+Rules får alltid kandidatpaketet som indata.
+Frontend får inte ändra det.
 
 # NORMATIVT: Relation till Joker
 
-Joker reducerar kandidatlistan genom deterministisk reducering.
+Joker skapar inga nya alternativ.
 
-Reducerad kandidatlista är en deterministisk funktion av:
+Huruvida en Player använder Jokrar eller inte för Title/Artist, väljer spelet vilken lista som visas:
 
-(ursprunglig kandidatlista, korrekt svar, antal spenderade Jokers)
+- 0 Jokrar → `candidates10`
+- 1 Joker → `candidates5`
+- 2 Jokrar → `candidates2`
 
-Reduceringsregler:
+Regler för när Joker får användas definieras i `07-joker`.
 
-- Reducering får endast ske inom den ursprungliga kandidatlistan.
-- Joker får inte introducera nya kandidater.
-- Joker får inte ändra ordning.
-- Reducering får aldrig exkludera korrekt svar.
-- Reducering får inte skapa nya perceptuella kontraster som gör facit trivialt.
+# NORMATIVT: Krav på kandidatpaket
 
-Joker skapar ingen ny kandidatvärld. Den minskar endast mängden inom den befintliga.
+För varje GuessPart (Title och Artist) gäller:
 
-# NORMATIVT: Per GuessPart
-
-Varje GuessPart kan ha egen kandidatmodell.
-
-- Timeline kan baseras på årtal.
-- Title kan baseras på Song-identitet.
-- Artist kan baseras på Artist-identitet.
-
-Varje GuessPart ska följa:
-
-- determinism
-- fast ursprunglig storlek (10)
-- fairness-constraint
-- korrekt alternativ alltid inkluderat
+- `candidates10` innehåller exakt 10 alternativ och inga dubletter.
+- `candidates5` innehåller exakt 5 alternativ och är en delmängd av `candidates10`.
+- `candidates2` innehåller exakt 2 alternativ och är en delmängd av `candidates5`.
+- Ordningen i `candidates5` och `candidates2` följer ordningen i `candidates10`.
+- Korrekt svar finns i `candidates10`, `candidates5` och `candidates2`.
 
 # NORMATIVT: Ansvar
 
-Kandidatgenerering är en del av spelreglernas kanon och ska implementeras i rules-lagret.
+## Backend
 
-Frontend får inte generera eller modifiera kandidatlistor.
+Backend skapar och sparar kandidatpaket per Performance och GuessPart.
 
-# INFORMATIVT: Variation och svårighet
+## Rules
 
-Perfekt strukturell symmetri mellan Rounds är inte ett mål.
+Rules:
+- validerar att kandidatpaketet uppfyller kraven ovan.
+- avgör vilken lista som ska användas beroende på Joker-användning.
 
-Syftet med fairness-constrainten är att undvika oavsiktliga
-genvägar till korrekt svar, inte att göra varje Round lika svår.
+Om rules underkänner kandidatpaketet (Title- eller Artist-paketet
+uppfyller inte kraven ovan) får Rounden inte gå vidare till reveal.
 
-Naturlig variation mellan kandidatlistor är tillåten och önskvärd, så länge:
+Backend ska då avbryta Rounden genom att sätta RoundState till `ABORTED`.
 
-- determinism upprätthålls
-- fairness-constrainten respekteras
-- korrekt svar inte trivialiseras
+## Frontend
 
-Fairness innebär inte homogenitet. Variation är en del av spelupplevelsen.
+Frontend visar endast den lista som gäller för aktuell Player.

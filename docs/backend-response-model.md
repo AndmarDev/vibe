@@ -2,54 +2,99 @@
 
 ## Syfte
 
-Detta dokument definierar hur spelets faktiska tillstånd presenteras för en specifik Player.
+Detta dokument beskriver hur backend skickar spelets tillstånd till en Player.
 
-Backend skickar:
+Backend skickar alltid två delar:
 
-- Snapshot, en gemensam bild av spelet
-- ViewerContext, en viewer-specifik kontext
+- **Snapshot** – samma för alla Players
+- **ViewerContext** – extra information för just den Player som tar emot svaret
 
-Detta dokument definierar principen. Det definierar inte API-strukturen i detalj.
+Dokumentet beskriver principen. Det låser inte exakt API-form.
 
 # NORMATIVT: Snapshot
 
-Snapshot är den gemensamma bilden av spelet.
+Snapshot är spelets gemensamma tillstånd.
 
-Snapshot innehåller det som är objektivt synligt för alla, till exempel:
+Snapshot innehåller endast det som är objektivt sant
+för alla Players vid samma tidpunkt.
+
+Exempel på innehåll:
 
 - GameState
-- aktuell Cycle och dess state
+- aktuella Players
+- aktuell Cycle och dess CycleState
 - aktuell Round och dess RoundState
-- Scheduled DJ
-- Acting DJ
+- utsedd DJ för Rounden
 - aktiv Performance (utan facit före reveal)
-- synliga GuessParts
+- synliga GuessParts och deras submit-status
 - Cards (Start Card, Timeline Card, DJ Card)
 - Joker-saldo per Player
-- facit i reveal-faser
+- facit i reveal-faser (endast när reveal-reglerna säger att facit är synligt)
 
-Snapshot är identisk för alla Players vid samma tidpunkt.
+Snapshot är identisk för alla Players.
 
-Snapshot är en representation av spelets faktiska tillstånd.
+Under `GUESSING` ändras inte det publika Joker-saldot,
+även om en Player använder Jokrar i Rounden.
 
 # NORMATIVT: ViewerContext
 
-ViewerContext är den del av svaret som är specifik för den Player som tar emot det.
+ViewerContext är information som endast gäller
+den Player som tar emot svaret.
 
-ViewerContext är härledd från:
+ViewerContext härleds från:
 
 - Snapshot
-- Playerns identitet i Game
+- mottagarens identitet
 
-ViewerContext kan innehålla viewer-specifik information
-som inte förändrar spelets gemensamma tillstånd, till exempel:
+ViewerContext kan innehålla:
 
-- om Player är Scheduled DJ
-- om Player är Acting DJ
-- om Player är Creator
-- vilken GuessPart som är nästa att skickas in
-- reducerade alternativ vid Joker-spend
-- Playerns aktuella Joker-saldo
+- om mottagaren är Creator
+- om mottagaren är utsedd DJ i aktuell Round
+- vilken GuessPart som är nästa att skicka in
+- hur många Jokrar mottagaren har använt i den pågående Rounden
+- vilken kandidatlista eller vilket tidsintervall
+  som ska visas under `GUESSING`
+
+Vilken GuessPart som är nästa att skicka in
+härleds enbart från:
+
+- submit-status för mottagarens GuessParts, och
+- den fasta submit-ordningen i `06-guess`.
+
+Om Round inte är i `GUESSING`,
+eller om GuessParts redan är definitiva,
+ska ViewerContext inte ange någon nästa GuessPart.
+
+ViewerContext får aldrig motsäga Snapshot.
+
+# NORMATIVT: Kandidater och Joker-hints i svaret
+
+Före reveal gäller:
+
+- Backend får inte skicka korrekt svar (facit).
+- Backend får inte skicka information som avslöjar facit.
+
+Under `GUESSING` får backend skicka hjälp som beror på Joker-användning, till exempel:
+
+- reducerad kandidatlista för Title/Artist (`candidates5`/`candidates2`)
+- tidsintervall för Timeline (t.ex. 1980–1989 eller 1980–1984)
+
+Denna hjälp får aldrig exkludera korrekt alternativ och får aldrig avslöja facit.
+
+# NORMATIVT: Reveal
+
+Vid `REVEALED_TIMELINE`:
+
+- korrekt år är synligt
+- Cards som delas ut för korrekt Timeline är synliga
+- inga Jokrar tilldelas i detta steg
+
+Vid `REVEALED_FULL`:
+
+- titel, artist och korrekt år är synliga
+- Cards som delas ut för Title+Artist (för Players som ännu inte fått Card) är synliga
+- tilldelade Jokrar är synliga
+- uppdaterade Joker-saldon är synliga
 
 # NORMATIVT: Ansvar
 
@@ -57,7 +102,7 @@ Backend:
 
 - beräknar Snapshot
 - beräknar ViewerContext
-- validerar alla actions mot spelets regler
+- validerar actions mot spelreglerna
 - är authoritative
 
 Frontend:
@@ -65,27 +110,3 @@ Frontend:
 - renderar från Snapshot + ViewerContext
 - skickar actions
 - implementerar inga egna spelregler
-
-# NORMATIVT: Reveal och informationsgränser
-
-Före reveal:
-
-- Snapshot får inte innehålla facit.
-- ViewerContext får inte innehålla facit eller indirekta facit-signaler.
-
-Under `GUESSING` får backend skicka viewer-specifik hjälpinformation
-(t.ex. reducerade alternativ via Joker), men aldrig korrekt svar.
-
-Vid `REVEALED_TIMELINE`:
-
-- Korrekt Timeline-facit är synligt.
-- Cards för korrekt Timeline är synliga.
-- Dessa Cards påverkas inte av senare reveal-steg.
-- Inga Jokers tilldelas i detta steg.
-
-Vid `REVEALED_FULL`:
-
-- Samtliga GuessParts och korrekt svar är synliga.
-- Cards för Title + Artist (för Players som ännu inte fått Card) är synliga.
-- Tilldelade Jokers är synliga.
-- Uppdaterade Joker-saldon är synliga.

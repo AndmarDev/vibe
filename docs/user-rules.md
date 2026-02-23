@@ -22,7 +22,10 @@ DJ (Disk Jockey) är den som spelar upp låten i rundan.
 Creator börjar som DJ.
 Därefter roterar DJ-rollen i den ordning spelarna gick med i spelet.
 
-Om DJ inte kan fortsätta kan Creator ta över som DJ för den rundan.
+Om DJ inte kan fortsätta kan Creator ta över och driva rundan vidare.
+
+Om någon lämnar spelet kan Creator ta bort den spelaren.
+Spelet fortsätter med de Players som är kvar.
 
 ## Så fungerar en runda
 
