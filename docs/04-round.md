@@ -79,8 +79,11 @@ Rounden är avbruten.
 
 - Inga fler transitions sker i Rounden.
 - Ingen bedömning eller tilldelning sker för Rounden.
-- Spelet går vidare till nästa Round.
+- Effekten på DJ-rotation och nästa Round avgörs enligt `03-cycle`.
 - Joker-saldo påverkas inte, se `07-joker`.
+
+En Round som övergår till `ABORTED` bidrar aldrig till tilldelning
+av Cards, Jokrar eller ⭐ och påverkar inte slutlig ranking.
 
 # NORMATIVT: Tillståndsövergångar
 
@@ -97,8 +100,7 @@ En Round övergår mellan tillstånd enligt följande:
 
 En Round kan också bli `ABORTED`:
 - när Creator avslutar Game, se `02-game`
-- om spelets indata är ogiltig, t.ex. om kandidatpaketet
-  för Title/Artist inte uppfyller kraven i `08-candidates`
+- om spelets indata är ogiltig, t.ex. om kandidatpaketet för Title/Artist inte uppfyller kraven i `08-candidates`
 
 Inga andra övergångar är tillåtna.
 
@@ -119,7 +121,7 @@ Om Creator tar bort en Player medan Round pågår:
 
 - Playern räknas inte längre som deltagare i Rounden.
 - Playerns Guess ignoreras från och med borttagningen.
-- Playern kan inte få Card eller Joker i Rounden.
+- Playern kan inte få Card, Joker eller ⭐ i Rounden.
 
 Utsedd DJ ändras inte av borttagning.
 
@@ -178,14 +180,16 @@ Vid `REVEALED_TIMELINE`:
 
 Vid `REVEALED_FULL`:
 
-- Varje kvarvarande Player som ännu inte fått Card
-  och har korrekt Title och Artist får 1 Card.
+- Varje kvarvarande Player som ännu inte fått Card och har korrekt Title och Artist får 1 Card.
 
 En Player kan få högst 1 Card per Round.
+Om det är korrekt Timeline, Title och Artist (full pott) i samma Round markeras det tilldelade Cardet med ⭐.
 
-Om den Player som är utsedd DJ får Card i sin egen Round
-är kortet ett DJ Card.
+Om den Player som är utsedd DJ får Card i sin egen Round är kortet ett DJ Card.
 I alla andra fall är det ett Timeline Card.
+Även ett DJ Card kan vara markerat med ⭐ om DJ hade korrekt Timeline, Title och Artist.
+
+⭐ symboliserar full pott och påverkar slutlig ranking vid tie-break enligt `02-game`.
 
 # NORMATIVT: Tilldelning av Jokrar
 
@@ -202,12 +206,10 @@ En kvarvarande Player tilldelas 1 Joker om:
 
 En Player kan vinna högst 1 Joker per Round.
 
-Regler för Joker-användning under `GUESSING` samt uppdatering
-av Joker-saldo vid `REVEALED_FULL` definieras i `07-joker`.
+Exakta regler för användning, effekt och tilldelning av Joker definieras i `07-joker`.
 
 # NORMATIVT: Relation till Performance
 
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Endast den Performance som är aktiv vid övergång till
-  `REVEALED_TIMELINE` ligger till grund för bedömning.
+- Endast den Performance som är aktiv vid övergång till `REVEALED_TIMELINE` ligger till grund för bedömning.

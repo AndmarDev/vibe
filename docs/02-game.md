@@ -26,7 +26,9 @@ Game är skapat men ännu inte startat.
 - Inga Cycles eller Rounds finns.
 
 Om en Player tas bort i `LOBBY` innebär det att Playern inte längre ingår i spelet.
-Eftersom spelet inte har startat finns inga Rounds, Cards eller Jokrar att påverka.
+Eftersom spelet inte har startat finns inga Cycles eller Rounds att påverka.
+Borttagning kan däremot innebära att Playerns startkort (startår) inte längre ingår i spelet.
+Övriga Players påverkas inte.
 
 ## IN_PROGRESS
 
@@ -37,13 +39,13 @@ Game pågår.
 - Creator kan ta bort Players.
 - Creator kan avsluta Game när som helst.
 
-Om antalet kvarvarande Players understiger `minPlayers`:
+Om antalet kvarvarande Players understiger `minPlayers` kan Game inte längre fortsätta.
+I detta fall gäller:
 
-- Game får inte starta en ny Cycle.
-- Pågående Round påverkas inte.
-- Creator kan avsluta Game.
+- Om en Round är aktiv ska den omedelbart övergå till `ABORTED`.
+- Game ska därefter övergå till `FINISHED`.
 
-Om endast Creator återstår är den naturliga åtgärden att avsluta Game.
+Slutlig ranking fastställs enligt regler nedan.
 
 ## FINISHED
 
@@ -53,6 +55,19 @@ Game är avslutat.
 - Inga transitions är tillåtna.
 - Game kan inte återgå till tidigare tillstånd.
 
+# NORMATIVT: Startår
+
+Varje Player ska innan `startGame` ange ett startår.
+
+Startåret:
+
+- måste vara ett helt årtal
+- måste ligga inom intervallet 1980–2010 (inklusive)
+
+Intervallet är fast och påverkas inte av låtpoolens ytterår.
+
+Game får inte övergå från `LOBBY` till `IN_PROGRESS` om någon Player saknar giltigt startår.
+
 # NORMATIVT: Övergångar
 
 ### startGame
@@ -60,6 +75,7 @@ Game är avslutat.
 
 - Triggas av Creator.
 - Kräver att Player-count uppfyller constraint.
+- Kräver att alla Players har giltigt startår.
 
 ### finishGame
 `LOBBY → FINISHED`, `IN_PROGRESS → FINISHED`
@@ -69,7 +85,12 @@ Game är avslutat.
 
 Om `finishGame` triggas när Game är i `IN_PROGRESS` och det finns en aktiv Round
 som inte nått `REVEALED_FULL`, ska den Rounden först övergå till `ABORTED`.
-Därefter övergår Game till `FINISHED`.
+Efter att Rounden övergått till `ABORTED` övergår Game till `FINISHED`.
+Ingen bedömning, tilldelning av Cards eller uppdatering av Joker-saldo
+ska ske för den avbrutna Rounden.
+
+Slutlig ranking baseras på de Cards (och ⭐-markeringar) som redan har tilldelats i avslutade Rounds.
+En Round som avbryts i samband med `finishGame` bidrar aldrig med Cards, Jokrar eller ⭐.
 
 # NORMATIVT: Borttagning av Players
 
@@ -103,12 +124,23 @@ Regler för hur min och max Players bestäms definieras i `premium.md`.
 
 # NORMATIVT: Slutlig ranking
 
-Vid övergång till `FINISHED` fastställs slutlig ranking.
+Endast Cycles som har nått state `FINISHED` räknas i slutlig ranking.
+
+En Cycle övergår till `FINISHED` när:
+- Creator i `BOUNDARY_DECISION` väljer att starta en ny Cycle, eller
+- Creator i `BOUNDARY_DECISION` väljer att avsluta Game.
+
+Om Game avslutas medan en Cycle är i `ACTIVE` räknas
+den Cyclen inte i slutlig ranking.
+
+Vid övergång till `FINISHED` fastställs ranking utifrån
+samtliga Cards som tilldelats i Cycles som är `FINISHED`.
 
 Ranking bestäms i följande ordning:
 
 1. Total Card count (högst vinner).
-2. Vid lika total Card count: antal DJ Cards (högst vinner).
+2. Vid lika total Card count: antal ⭐ (högst vinner).
 3. Vid fortsatt lika: delad vinst.
 
-Inga ytterligare tie-break-regler tillämpas.
+⭐ är en markering på ett Card.
+⭐ räknas inte som ett separat Card.

@@ -13,7 +13,8 @@ En Guess är en Players svar på den aktiva Performancen i en Round.
 - Guess kan ändras endast när Round är i `GUESSING`.
 - Backend är authoritative för submit och bedömning.
 
-Jokrar kan användas under `GUESSING` för att reducera alternativ i en GuessPart.
+Jokrar kan användas under `GUESSING` för att förenkla en GuessPart.
+En Player får använda högst 1 Joker per GuessPart (Timeline, Title, Artist).
 Regler för Joker definieras i `07-joker`.
 
 # NORMATIVT: Struktur
@@ -32,9 +33,14 @@ Guess består av tre GuessParts:
 
 # NORMATIVT: Hur GuessParts uttrycks
 
-- `Timeline` uttrycks genom att placera låten på en position i Playerns timeline.
-- `Title` och `Artist` uttrycks genom att välja ett alternativ
-   ur den kandidatlista (se `08-candidates`) som visas.
+`Timeline` uttrycks genom att placera låten på en position i Playerns timeline.
+
+`Title` och `Artist` uttrycks genom att välja ett alternativ
+ur de svarsalternativ som visas för GuessParten.
+Alternativen kommer från ett CandidateSet (se `08-candidates`).
+Spelet visar antingen `full` eller `reduced` beroende på Joker-användning.
+
+Joker-hjälp påverkar en GuessPart innan den submittas.
 
 Regler för vad som räknas som korrekt definieras i `04-round`.
 
@@ -45,6 +51,14 @@ GuessParts skickas in i fast ordning:
 1 → 2 → 3
 
 En senare GuessPart får inte skickas in förrän föregående är inskickad.
+
+# NORMATIVT: Informationsprincip
+
+En GuessPart får inte ändras efter att nästa GuessPart blivit tillgänglig
+för Playern.
+
+Anledningen till denna irreversibilitet är att informationen som blir
+tillgänglig för Playern i nästa GuessPart kan påverka beslut.
 
 # NORMATIVT: Submit
 
@@ -69,10 +83,21 @@ När Round är i `LOCKED`:
 
 - Inga nya GuessParts får skickas in.
 
-Om Round återgår till `GUESSING`:
+`LOCKED` innebär interaktionsfrysning.
+GuessParts blir bedömningsgrundande först vid övergång till `REVEALED_TIMELINE`.
 
-- Artist kan ändras.
+Om Round låses upp och återgår till `GUESSING`:
+
 - Timeline och Title förblir låsta om de redan är inskickade.
+- Om Playern har börjat gissa på Artist så kan denna sista GuessPart
+  ändras så länge Round är i `GUESSING`.
+
+Progression är individuell per Player.
+
+Vid upplåsning återgår varje Player till sin senaste tillgängliga GuessPart.
+
+Upplåsning förändrar inte vilken GuessPart som varit tillgänglig.
+Den gör endast redigerbara fält skrivbara igen.
 
 # NORMATIVT: Relation till Performance-byte
 

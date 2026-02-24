@@ -38,15 +38,18 @@ När alla är klara låses rundan och låten avslöjas.
 
 ## Reveal
 
-Reveal sker i två steg:
+Reveal sker i två steg.
 
 1. **År** visas.
-   Om du placerat låten rätt i din tidslinje får du ett kort direkt.
+   Har du placerat låten rätt i din tidslinje får du ett kort.
 
 2. **Titel och artist** visas.
-   Om du ännu inte fått kort, och gissat både titel och artist rätt, får du ett kort.
+   Har du inte redan fått kort, och gissat både titel och artist rätt, får du ett kort.
 
-Om du gissat rätt på **alla tre** (år, titel, artist) får du dessutom en **Joker**.
+Har du rätt på **alla tre delar** (år, titel och artist) får du dessutom:
+
+- ⭐ en stjärna på kortet
+- +1 Joker
 
 ## Kort
 
@@ -73,10 +76,15 @@ I alla andra fall blir kortet ett **tidslinjekort**.
 
 Jokrar är ett hjälpmedel när du gissar.
 
-- Du kan använda upp till 2 jokrar på samma delgissning.
-- Du kan ha högst 3 jokrar samtidigt.
-- Om du är DJ på tur i rundan får du inte använda jokrar.
-- Om Creator tar över som DJ kan Creator fortfarande använda jokrar.
+Du kan ha **högst 3** jokrar totalt.
+
+Du kan använda **1 joker per delgissning**:
+
+- **Tidslinje:** 1 joker visar rätt **decennium** (t.ex. 80-tal).
+- **Titel:** 1 joker minskar alternativen från **10 till 3**.
+- **Artist:** 1 joker minskar alternativen från **10 till 3**.
+
+Om du är DJ på tur i rundan får du inte använda jokrar.
 
 Om DJ byter låt innan rundan låses får du tillbaka de jokrar du använt på den låten.
 
@@ -92,6 +100,6 @@ När spelet avslutas visas vem som samlat flest kort.
 
 Den med flest kort vinner.
 
-Vid lika många kort vinner den med flest DJ-kort.
+Vid lika många kort vinner den med flest ⭐-kort.
 
 Om det fortfarande är lika delar spelarna segern.

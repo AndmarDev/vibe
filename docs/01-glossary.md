@@ -40,10 +40,10 @@ Players lämnar Guesses och resultat fastställs.
 **Egenskaper:**
 - Round har en utsedd DJ.
 - DJ leder rundans flöde.
-- Round har en state machine.
+- Round har en state machine (definieras i `04-round`).
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Round fastställer tilldelning av Cards och Jokrar.
+- Round fastställer tilldelning av Cards och Jokers (definieras i `04-round` och `07-joker`).
 
 ## Performance
 
@@ -100,6 +100,7 @@ Creator är den Player som skapar och administrerar Game.
 - Det finns exakt en Creator per Game.
 - Creator startar och avslutar Game.
 - Creator deltar i övrigt som vanlig Player.
+- Om DJ tas bort kan Creator driva ceremonin enligt `04-round`.
 
 ## Guess
 
@@ -126,16 +127,17 @@ En separat bedömd del av en Guess.
 - GuessParts skickas in sekventiellt.
 - GuessParts bedöms separat.
 
-## Kandidatpaket
+## CandidateSet
 
 **Definition:**
-De alternativ som spelet visar för GuessParts `Title` och `Artist` i en viss Performance.
+De svarsalternativ som spelet kan visa för GuessParts `Title` och `Artist` i en viss Performance.
 
 **Egenskaper:**
 - Skapas per aktiv Performance och GuessPart.
 - Är gemensamt för alla Players i samma Round.
-- Består av tre listor: `candidates10`, `candidates5`, `candidates2`.
-- Joker avgör vilken av listorna som visas (se `07-joker` och `08-candidates`).
+- Består av två nivåer: `full` och `reduced`.
+- `reduced` är alltid en delmängd av `full`.
+- Joker avgör vilken nivå som visas (regler i `07-joker`, format och krav i `08-candidates`).
 
 ## Card
 
@@ -153,6 +155,7 @@ Card är en kategori som inkluderar:
 - Card är persistent under hela Game.
 - Alla Card-typer räknas lika i total Card count.
 - En Player kan få högst 1 Card per Round.
+- Ett Card kan ha en markering (t.ex. ⭐). Betydelse och användning definieras i `04-round` och `02-game`.
 
 ## Start Card
 
@@ -187,19 +190,13 @@ Ett Card som utsedd DJ får vid korrekt gissning i sin egen Round.
 ## Joker
 
 **Definition:**
-En resurs som kan vinnas genom korrekt Guess och som
-används för att förenkla en GuessPart under `GUESSING`.
+En resurs som en Player kan använda under `GUESSING` för att förenkla en GuessPart.
 
 **Egenskaper:**
 - Tillhör en Player inom ett Game.
-- En Player kan vinna högst 1 Joker per Round.
-- En Player kan inneha högst 3 Jokrar samtidigt.
-- Jokrar spenderas under `GUESSING`.
-- Jokrar påverkar aldrig korrekt svar eller bedömning.
-- För `Timeline` kan Joker ge ett tidsintervall som innehåller rätt år.
-- För `Title` och `Artist` minskar Joker antalet alternativ som visas.
-
-Detaljer om användning och effekt definieras i `07-joker`.
+- Joker påverkar aldrig korrekt svar eller bedömning.
+- Joker kan användas på `Timeline`, `Title` och `Artist`.
+- Exakta regler för begränsningar, effekt, intjäning och saldo definieras i `07-joker`.
 
 # NORMATIVT: Music Model
 
@@ -236,6 +233,6 @@ En kuraterad samling av Songs.
 - Game består av Cycles.
 - Cycle består av Rounds.
 - Round har en utsedd DJ.
-- En Performance är aktiv per Round.
+- En Round kan ha högst en aktiv Performance åt gången.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokrar genereras genom Round.

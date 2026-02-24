@@ -44,13 +44,16 @@ Byte innebär att:
 
 RoundState ändras inte vid byte.
 
+Byte av Performance när Round är i `GUESSING` påverkar
+inte DJ-rotation och räknas inte som en avslutad DJ-tur.
+
 # NORMATIVT: Konsekvenser av byte
 
 När en Performance ersätts under `GUESSING`:
 
-- Alla Guess som lämnats för den tidigare Performancen upphör att gälla.
-- Alla Jokrar som använts i den Performancen annulleras.
-  Annulleringen påverkar inte Joker-saldot.
+- Alla Guess kopplade till den tidigare Performancen upphör att gälla.
+- Alla registrerade Joker-användningar för den tidigare Performancen annulleras.
+- Annullerad användning påverkar inte Joker-saldot.
 
 Den nya Performancen behandlas som en ny gissningssituation.
 
@@ -62,5 +65,6 @@ Performance reglerar inte:
 - tillståndsövergångar
 - tilldelning av Cards
 - tilldelning av Jokrar
+- huruvida en `ABORTED` Round räknas som genomförd DJ-tur
 
-Dessa regler ägs av Round.
+Dessa regler ägs av andra dokument.

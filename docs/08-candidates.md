@@ -2,68 +2,59 @@
 
 ## Syfte
 
-Detta dokument definierar kandidatpaket för GuessParts.
+Detta dokument definierar vilka svarsalternativ som kan visas för GuessParts `Title` och `Artist`.
 
-Kandidatpaket används för Title och Artist.
 Timeline omfattas inte av detta dokument.
 
-Dokument 01–07 definierar spelregler.
-Detta dokument definierar vilka alternativ som presenteras.
+# NORMATIVT: CandidateSet
 
-# NORMATIVT: Kandidatpaket
+För varje aktiv Performance och GuessPart (`Title` respektive `Artist`) ska backend generera ett CandidateSet.
 
-För varje aktiv Performance och GuessPart (Title och Artist)
-ska backend generera ett kandidatpaket.
+Ett CandidateSet består av två listor:
 
-Ett kandidatpaket består av tre listor i fast ordning:
+- `full` (exakt 10 alternativ)
+- `reduced` (exakt 3 alternativ)
 
-- `candidates10` (exakt 10 alternativ)
-- `candidates5` (exakt 5 alternativ)
-- `candidates2` (exakt 2 alternativ)
+Båda listorna är gemensamma för alla Players i samma Round.
 
-Alla tre listor är gemensamma för alla Players i samma Round.
-
-Kandidatpaketet är indata till spelreglerna.
-Rules får alltid kandidatpaketet som indata.
+CandidateSet är indata till spelreglerna.
+Rules får CandidateSet som indata.
 Frontend får inte ändra det.
 
 # NORMATIVT: Relation till Joker
 
 Joker skapar inga nya alternativ.
 
-Huruvida en Player använder Jokrar eller inte för Title/Artist, väljer spelet vilken lista som visas:
+För `Title` och `Artist` väljer spelet vilken lista som visas:
 
-- 0 Jokrar → `candidates10`
-- 1 Joker → `candidates5`
-- 2 Jokrar → `candidates2`
+- 0 Jokrar → `full`
+- 1 Joker → `reduced`
 
 Regler för när Joker får användas definieras i `07-joker`.
 
-# NORMATIVT: Krav på kandidatpaket
+# NORMATIVT: Krav på CandidateSet
 
-För varje GuessPart (Title och Artist) gäller:
+För varje GuessPart (`Title` och `Artist`) gäller:
 
-- `candidates10` innehåller exakt 10 alternativ och inga dubletter.
-- `candidates5` innehåller exakt 5 alternativ och är en delmängd av `candidates10`.
-- `candidates2` innehåller exakt 2 alternativ och är en delmängd av `candidates5`.
-- Ordningen i `candidates5` och `candidates2` följer ordningen i `candidates10`.
-- Korrekt svar finns i `candidates10`, `candidates5` och `candidates2`.
+- `full` innehåller exakt 10 alternativ och inga dubletter.
+- `reduced` innehåller exakt 3 alternativ och inga dubletter.
+- `reduced` är en delmängd av `full`.
+- Ordningen i `reduced` följer ordningen i `full`.
+- Korrekt svar finns i både `full` och `reduced`.
 
 # NORMATIVT: Ansvar
 
 ## Backend
 
-Backend skapar och sparar kandidatpaket per Performance och GuessPart.
+Backend skapar och sparar CandidateSet per Performance och GuessPart (`Title` och `Artist`).
 
 ## Rules
 
 Rules:
-- validerar att kandidatpaketet uppfyller kraven ovan.
-- avgör vilken lista som ska användas beroende på Joker-användning.
+- kontrollerar att CandidateSet uppfyller kraven ovan
+- avgör vilken lista som ska användas beroende på Joker-användning
 
-Om rules underkänner kandidatpaketet (Title- eller Artist-paketet
-uppfyller inte kraven ovan) får Rounden inte gå vidare till reveal.
-
+Om rules underkänner CandidateSet för `Title` eller `Artist` får Rounden inte gå vidare till reveal.
 Backend ska då avbryta Rounden genom att sätta RoundState till `ABORTED`.
 
 ## Frontend
