@@ -75,7 +75,7 @@ ViewerContext kan innehålla:
 
 ### Roller
 
-- om mottagaren är Creator
+- om mottagaren är Host
 - om mottagaren är Oracle i aktuell Round
 
 Om mottagaren har anslutit under `BOUNDARY_DECISION` ska ViewerContext kunna

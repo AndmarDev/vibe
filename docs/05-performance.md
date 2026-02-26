@@ -13,7 +13,7 @@ Performance är den aktuella låten som spelas och gissas på.
 
 En Performance är en instans av en Recording som används i en Round.
 
-En Round kan över tid referera flera Performances (om Creator "bytt låt"),
+En Round kan över tid referera flera Performances (om Host "bytt låt"),
 men har alltid högst en aktiv Performance.
 
 Performance har ingen egen state machine.
@@ -34,13 +34,13 @@ När en Round övergår från `READY` till `GUESSING`:
 - en Performance skapas
 - den sätts som aktiv
 - Oracle får tillgång till facit (year, title, artist)
-- Creator kan spela upp låten
+- Host kan spela upp låten
 
 # NORMATIVT: Byte av Performance
 
 Aktiv Performance kan ersättas endast när Round är i `GUESSING`.
 
-Byte triggas av Creator (dvs Creator "byter låt").
+Byte triggas av Host (dvs Host "byter låt").
 
 Byte innebär att:
 

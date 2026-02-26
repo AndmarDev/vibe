@@ -20,9 +20,9 @@ Game har exakt ett av följande tillstånd:
 Game är skapat men ännu inte startat.
 
 - Players kan ansluta.
-- Creator kan ta bort Players.
-- Creator kan starta Game.
-- Creator kan avsluta Game.
+- Host kan ta bort Players.
+- Host kan starta Game.
+- Host kan avsluta Game.
 - Inga Cycles eller Rounds finns.
 
 Om en Player tas bort i `LOBBY` innebär det att Playern inte längre ingår i spelet.
@@ -36,10 +36,10 @@ Game pågår.
 
 - Cycles och Rounds skapas och spelas sekventiellt.
 - Oracle-rotation är deterministisk och sker enligt regler i `03-cycle`.
-- Creator är första Oracle i varje Cycle, därefter följer övriga Players i join-ordning.
-- Creator kan ta bort Players.
+- Host är första Oracle i varje Cycle, därefter följer övriga Players i join-ordning.
+- Host kan ta bort Players.
 - Sentillkomna Players kan ansluta endast när aktuell Cycle är i `BOUNDARY_DECISION`.
-- Creator kan avsluta Game när som helst.
+- Host kan avsluta Game när som helst.
 
 Om antalet kvarvarande Players understiger `minPlayers` kan Game inte längre fortsätta.
 I detta fall gäller:
@@ -79,14 +79,14 @@ innan nästa Cycle kan startas.
 ### startGame
 `LOBBY → IN_PROGRESS`
 
-- Triggas av Creator.
+- Triggas av Host.
 - Kräver att Player-count uppfyller constraint.
 - Kräver att alla Players har giltigt startår.
 
 ### finishGame
 `LOBBY → FINISHED`, `IN_PROGRESS → FINISHED`
 
-- Triggas av Creator.
+- Triggas av Host.
 - Kan triggas när som helst.
 
 Om `finishGame` triggas när Game är i `IN_PROGRESS`
@@ -103,7 +103,7 @@ En avbruten Round kan aldrig generera Timeline Cards, Oracle Card, Jokrar eller 
 
 # NORMATIVT: Borttagning av Players
 
-Innan Game nått state `FINISHED` kan Creator ta bort en Player från Game.
+Innan Game nått state `FINISHED` kan Host ta bort en Player från Game.
 
 En borttagen Player:
 
@@ -115,7 +115,7 @@ En borttagen Player:
 Om den borttagna Playern är Oracle i en aktiv Round gäller `04-round`:
 Rounden avbryts och övergår till `ABORTED`.
 
-Creator kan inte tas bort från Game.
+Host kan inte tas bort från Game.
 
 # NORMATIVT: Sen anslutning (late join)
 
@@ -152,8 +152,8 @@ Game får startas (dvs gå från `LOBBY` till `IN_PROGRESS`) endast om:
 Endast Cycles som har nått state `FINISHED` räknas i slutlig ranking.
 
 En Cycle övergår till `FINISHED` när:
-- Creator i `BOUNDARY_DECISION` väljer att starta en ny Cycle, eller
-- Creator i `BOUNDARY_DECISION` väljer att avsluta Game.
+- Host i `BOUNDARY_DECISION` väljer att starta en ny Cycle, eller
+- Host i `BOUNDARY_DECISION` väljer att avsluta Game.
 
 Om Game avslutas medan en Cycle är i `ACTIVE` räknas den Cyclen inte i slutlig ranking.
 

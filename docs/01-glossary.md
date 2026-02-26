@@ -71,17 +71,18 @@ En deltagare i ett Game.
 En Player som vid den aktuella tidpunkten ingår i Game.
 En Player som har tagits bort från Game är inte kvarvarande.
 
-## Creator
+## Host
 
 **Definition:**
-Den Player som skapade Game och ansvarar för dess livscykel.
+Den Player som ansvarar för Game under hela dess livscykel.
 
 **Egenskaper:**
-- Det finns exakt en Creator per Game.
-- Creator kan starta och avsluta Game.
-- Creator kan ta bort Players.
-- Creator ansvarar för ljuduppspelning.
-- Creator deltar i övrigt som vanlig Player.
+- Host skapar Game och är första Player att ansluta.
+- Det finns exakt en Host per Game.
+- Host kan starta och avsluta Game.
+- Host kan ta bort Players.
+- Host ansvarar för ljuduppspelning.
+- Host deltar i övrigt som vanlig Player.
 
 ## Oracle
 

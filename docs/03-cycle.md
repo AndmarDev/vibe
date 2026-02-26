@@ -39,17 +39,17 @@ Cycle är avslutad och väntar på beslut.
 - Inga nya Rounds kan längre skapas i denna Cycle.
 - Nya Players kan ansluta i detta tillstånd. En Player som ansluter nu ingår först
   i nästa Cycle och måste ange ett giltigt startår innan nästa Cycle kan starta.
-- Creator väljer att:
+- Host väljer att:
   - starta en ny Cycle, eller
   - avsluta Game.
 
-När Creator fattar beslut:
+När Host fattar beslut:
 
-- Om Creator väljer att starta en ny Cycle:
+- Om Host väljer att starta en ny Cycle:
   - Den aktuella Cyclen övergår till `FINISHED`.
   - En ny Cycle skapas i state `ACTIVE`.
 
-- Om Creator väljer att avsluta Game:
+- Om Host väljer att avsluta Game:
   - Den aktuella Cyclen övergår till `FINISHED`.
   - Game övergår därefter till `FINISHED`.
 
@@ -68,7 +68,7 @@ när Cyclen skapas i state `ACTIVE`.
 Players som ansluter i `BOUNDARY_DECISION` påverkar inte den avslutade Cyclen,
 utan ingår först i rotationen för nästa Cycle.
 
-- Creator är alltid första Oracle i varje Cycle.
+- Host är alltid första Oracle i varje Cycle.
 - Därefter följer övriga Players i join-ordning.
 - Varje Player är Oracle exakt en gång per Cycle.
 - Endast Players som fortfarande ingår i Game beaktas.

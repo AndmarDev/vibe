@@ -36,12 +36,12 @@ När Round startas:
 Round pågår.
 
 - Exakt en Performance är aktiv.
-- Creator ansvarar för uppspelning av låten.
+- Host ansvarar för uppspelning av låten.
 - Alla kvarvarande Players utom Oracle lämnar Guess.
 - Oracle gör Prediction.
 - Players får använda Jokrar enligt `07-joker`.
 - Oracle använder inga Jokrar.
-- Creator kan byta Performance (byta låt) enligt `05-performance`.
+- Host kan byta Performance (byta låt) enligt `05-performance`.
 
 Prediction är knuten till aktiv Performance.
 Prediction kan ändras så länge Round är i `GUESSING`.
@@ -105,7 +105,7 @@ Round är avbruten.
 
 En Round kan också bli `ABORTED`:
 
-- när Creator avslutar Game (`02-game`)
+- när Host avslutar Game (`02-game`)
 - om speldata är ogiltig (t.ex. ogiltigt kandidatpaket enligt `08-candidates`)
 
 Inga andra övergångar är tillåtna.
@@ -131,7 +131,7 @@ Ingen annan roll kan ersätta Oracle i den Rounden.
 
 # NORMATIVT: Borttagning av Player
 
-Om Creator tar bort en Player medan Round pågår:
+Om Host tar bort en Player medan Round pågår:
 
 - Playern räknas inte längre som deltagare i Rounden.
 - Playerns Guess ignoreras från och med borttagningen.

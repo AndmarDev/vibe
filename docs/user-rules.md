@@ -34,15 +34,15 @@ När spelet redan pågår kan nya spelare bara ansluta i pausen mellan varv.
 Varje spelare anger ett startår.
 Detta blir ditt startkort och början på din tidslinje.
 
-Creator spelar upp låtarna under hela spelet.
+Host spelar upp låtarna under hela spelet.
 
 Oracle leder rundan. Oracle ser facit (år, titel och artist)
 när rundan startar och gör en Prediction om hur svår låten är.
 
 Oracle-rollen roterar varje varv i den ordning spelarna gick med i spelet.
-Creator är alltid först som Oracle i varje varv.
+Host är alltid först som Oracle i varje varv.
 
-Creator kan ta bort spelare när som helst.
+Host kan ta bort spelare när som helst.
 Spelet fortsätter med de spelare som är kvar.
 
 ## Gå med under pågående spel
@@ -57,7 +57,7 @@ Du anger ett startår innan nästa varv startar.
 Varje runda spelas på en låt.
 
 1. Oracle startar rundan.
-2. Creator spelar låten.
+2. Host spelar låten.
 3. Alla spelare utom Oracle placerar låten i sin tidslinje och gissar titel och artist.
 4. Oracle gör en Prediction: Lätt, Medel eller Svår.
 
@@ -115,7 +115,7 @@ Du kan använda 1 joker per delgissning:
 - **Titel:** minskar alternativen från 10 till 3.
 - **Artist:** minskar alternativen från 10 till 3.
 
-Om Creator byter låt innan rundan låses får du tillbaka de jokrar du använt på den låten.
+Om Host byter låt innan rundan låses får du tillbaka de jokrar du använt på den låten.
 
 ## Spelets slut
 
