@@ -1,12 +1,12 @@
 # docs/03-cycle.md
 
-## Syfte
+# Syfte
 
 Detta dokument definierar Cycle.
 
-En Cycle är ett varv runt bordet där varje Player är DJ varsin gång.
+En Cycle är ett varv runt bordet där varje Player är Oracle varsin gång.
 
-Cycle strukturerar DJ-rotation och skapar en naturlig paus där spelet kan fortsätta eller avslutas.
+Cycle strukturerar Oracle-rotation och skapar en naturlig paus där spelet kan fortsätta eller avslutas.
 
 # NORMATIVT: CycleState
 
@@ -21,22 +21,24 @@ Varje Cycle har exakt ett av följande tillstånd:
 Cycle pågår.
 
 - Rounds skapas sekventiellt.
-- För varje Round i denna Cycle utses exakt en DJ.
-- En Player kan vara DJ högst en gång per Cycle.
+- För varje Round i denna Cycle utses exakt en Oracle.
+- En Player kan vara Oracle högst en gång per Cycle.
 
-Endast Players som fortfarande ingår i Game beaktas vid DJ-rotation.
+Endast Players som fortfarande ingår i Game beaktas vid Oracle-rotation.
 
-Om en Player tas bort under en Cycle ingår den Playern inte längre i DJ-rotationen.
+Om en Player tas bort under en Cycle ingår den Playern inte längre i Oracle-rotationen.
 Borttagning av Player under en pågående Round regleras i `04-round`.
 
-När alla kvarvarande Players har genomfört sin DJ-tur exakt en gång i denna Cycle,
-och den senaste Rounden har avslutats, övergår Cycle till `BOUNDARY_DECISION`.
+När alla kvarvarande Players har genomfört exakt en Oracle-tur i denna Cycle,
+och den senaste Rounden har nått `REVEALED`, övergår Cycle till `BOUNDARY_DECISION`.
 
 ## BOUNDARY_DECISION
 
 Cycle är avslutad och väntar på beslut.
 
-- Inga nya Rounds skapas i denna Cycle.
+- Inga nya Rounds kan längre skapas i denna Cycle.
+- Nya Players kan ansluta i detta tillstånd. En Player som ansluter nu ingår först
+  i nästa Cycle och måste ange ett giltigt startår innan nästa Cycle kan starta.
 - Creator väljer att:
   - starta en ny Cycle, eller
   - avsluta Game.
@@ -57,48 +59,56 @@ Cycle är avslutad.
 
 - Inga nya Rounds skapas i denna Cycle.
 
-# NORMATIVT: DJ-rotation
+# NORMATIVT: Oracle-rotation
 
-Creator är första DJ i spelet.
+Oracle-rotation definieras per Cycle och är deterministisk.
 
-DJ-rotation definieras per Cycle:
+Oracle-rotationen för en Cycle beräknas från de Players som ingår i Game
+när Cyclen skapas i state `ACTIVE`.
+Players som ansluter i `BOUNDARY_DECISION` påverkar inte den avslutade Cyclen,
+utan ingår först i rotationen för nästa Cycle.
 
-- DJ utses enligt Players join-ordning.
-- Varje Player är DJ en gång per Cycle.
+- Creator är alltid första Oracle i varje Cycle.
+- Därefter följer övriga Players i join-ordning.
+- Varje Player är Oracle exakt en gång per Cycle.
 - Endast Players som fortfarande ingår i Game beaktas.
 
 Rotationen påverkas inte av:
 
 - antal vunna Cards
 - antal Jokrar
+- tidigare resultat
 
-Om en Player tas bort före sin DJ-tur hoppar rotationen över den Playern.
+Om en Player tas bort före sin Oracle-tur hoppar rotationen över den Playern.
 
 # NORMATIVT: Relation till Round
 
 - En Cycle består av 0..N Rounds.
 - En Round tillhör exakt en Cycle.
-- DJ för en Round utses enligt Cycle-rotationen.
-- Endast en aktiv Round kan finnas per Cycle vid en given tidpunkt.
+- Oracle för en Round utses enligt Cycle-rotationen.
+- Endast en Round kan vara i state `READY`, `GUESSING`,
+  `LOCKED` eller `REVEALED` per Cycle vid en given tidpunkt.
 
-# NORMATIVT: DJ-tur och avslutad Round
+# NORMATIVT: Oracle-tur och avslutad Round
 
-En Cycle skapar Rounds sekventiellt.
+Rounds skapas sekventiellt i en Cycle.
 
-En DJ-tur räknas som genomförd endast när Rounden når `REVEALED_FULL`.
+En Oracle-tur räknas som genomförd endast när Rounden når `REVEALED`.
 
-- Om en Round når `REVEALED_FULL` anses den utsedda DJ ha genomfört sin tur. Nästa Round får nästa DJ enligt Cycle-rotationen.
-- Om en Round övergår till `ABORTED` anses ingen kvarvarande Player ha genomfört någon DJ-tur i den Rounden.
+Om en Round når `REVEALED` anses den utsedda Oracle ha genomfört sin tur.
+Nästa Round får nästa Oracle enligt Cycle-rotationen.
 
-Nästa Round ska då utses så här:
+Om en Round övergår till `ABORTED` anses ingen Player ha genomfört någon Oracle-tur i den Rounden.
+Detta gäller oavsett orsak till `ABORTED`, inklusive att Oracle har tagits bort under Rounden.
+Om Round blev `ABORTED` utses Oracle för nästa Round deterministiskt:
 
-- Om den utsedda DJ fortfarande är kvarvarande: samma DJ igen.
-- Om den utsedda DJ inte längre är kvarvarande (t.ex. borttagen): nästa DJ enligt Cycle-rotationen.
+- Om den senast utsedda Oracle fortfarande är kvarvarande → samma Oracle igen.
+- Annars → nästa kvarvarande Player enligt Cycle-rotationen.
 
 # NORMATIVT: Rättviseprincip
 
 En Cycle är strukturerad så att varje kvarvarande Player
-genomför exakt en DJ-tur per Cycle.
+genomför exakt en Oracle-tur per Cycle.
 
 Eftersom endast Cycles i state `FINISHED` räknas i slutlig ranking,
-har alla Players som ingår i ranking varit DJ lika många gånger.
+har alla Players som ingår i ranking varit Oracle lika många gånger.

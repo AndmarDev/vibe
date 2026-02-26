@@ -1,6 +1,6 @@
 # docs/01-glossary.md
 
-## Syfte
+# Syfte
 
 Detta dokument definierar begreppen i ett socialt musikspel
 där deltagare turas om att spela musik och gissa.
@@ -23,12 +23,12 @@ En spelomgång där Players deltar och Rounds spelas inom Cycles.
 ## Cycle
 
 **Definition:**
-Ett varv runt bordet där varje Player är DJ varsin gång.
+En strukturell enhet inom ett Game där varje Player är Oracle en gång.
 
 **Egenskaper:**
 - Cycle består av Rounds.
-- En Player är DJ en gång per Cycle.
-- DJ-rotation sker per Round.
+- Varje Player är Oracle exakt en gång per Cycle.
+- Oracle-rotation är deterministisk.
 - Cycle är struktur, inte spelhändelse.
 
 ## Round
@@ -38,12 +38,12 @@ En spelhändelse inom ett Game där en låt spelas,
 Players lämnar Guesses och resultat fastställs.
 
 **Egenskaper:**
-- Round har en utsedd DJ.
-- DJ leder rundans flöde.
+- Round har en Oracle.
+- Oracle leder rundans flöde.
 - Round har en state machine (definieras i `04-round`).
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Round fastställer tilldelning av Cards och Jokers (definieras i `04-round` och `07-joker`).
+- Round fastställer tilldelning av Cards och Jokrar (definieras i `04-round` och `07-joker`).
 
 ## Performance
 
@@ -64,43 +64,48 @@ En deltagare i ett Game.
 **Egenskaper:**
 - Player existerar endast inom ett Game.
 - Player är inte ett konto eller device.
-- Player kan gissa, vara DJ samt vinna Cards och Jokrar.
-- En Player kan tas bort från spelet.
-- En borttagen Player är inte längre en del av Game.
-  Konsekvenser av borttagning definieras i `02-game` och `04-round`.
+- Player kan lämna Guess, vara Oracle samt vinna Cards och Jokrar enligt Roundens regler.
+- Player kan tas bort från Game.
 
 **Kvarvarande Player:**
-En Player som fortfarande ingår i Game vid den aktuella tidpunkten.
-
-En Player som har tagits bort från Game är inte kvarvarande och beaktas
-inte i tilldelning av Cards, Jokers, DJ-rotation eller ranking.
-
-## DJ
-
-**Definition:**
-Den Player som leder en specifik Round.
-
-**Egenskaper:**
-
-- Varje Round har en utsedd DJ.
-- DJ spelar upp låten i Rounden.
-- DJ kan byta låt.
-- DJ kan spela låten flera gånger under `GUESSING`.
-- DJ driver Roundens övergångar (start, lås, lås upp, reveal).
-- DJ lämnar Guess på samma sätt som övriga Players.
-- DJ får inte använda Jokrar i sin egen Round.
-- Om DJ får Card i sin egen Round är det ett DJ Card.
+En Player som vid den aktuella tidpunkten ingår i Game.
+En Player som har tagits bort från Game är inte kvarvarande.
 
 ## Creator
 
 **Definition:**
-Creator är den Player som skapar och administrerar Game.
+Den Player som skapade Game och ansvarar för dess livscykel.
 
 **Egenskaper:**
 - Det finns exakt en Creator per Game.
-- Creator startar och avslutar Game.
+- Creator kan starta och avsluta Game.
+- Creator kan ta bort Players.
+- Creator ansvarar för ljuduppspelning.
 - Creator deltar i övrigt som vanlig Player.
-- Om DJ tas bort kan Creator driva ceremonin enligt `04-round`.
+
+## Oracle
+
+**Definition:**
+Den Player som leder en specifik Round och som har facit.
+
+**Egenskaper:**
+- Varje Round har exakt en Oracle.
+- Oracle leder Roundens transitions (start, lås, lås upp, reveal).
+- Oracle får facit (year, title, artist) när Round övergår till `GUESSING`.
+- Oracle gör Prediction istället för Guess och använder därför inga Jokrar.
+- Oracle kan tilldelas ett Oracle Card enligt regler för Prediction.
+
+## Prediction
+
+**Definition:**
+Oracles bedömning av svårighetsgrad (Lätt, Medel eller Svår) för aktiv Performance.
+
+**Egenskaper:**
+- Varje aktiv Performance kan ha högst en Prediction.
+- Prediction är knuten till aktiv Performance.
+- Oracle kan ändra Prediction under gissningsfasen och den blir definitiv när Round låses.
+- Prediction bedöms vid reveal.
+- Korrekt Prediction genererar ett Oracle Card.
 
 ## Guess
 
@@ -142,20 +147,12 @@ De svarsalternativ som spelet kan visa för GuessParts `Title` och `Artist` i en
 ## Card
 
 **Definition:**
-Ett persistent objekt som tillhör en Player i ett Game.
+Ett persistent objekt som tillhör en Player i ett Game och som tilldelas enligt Roundens regler.
 
 Card är en kategori som inkluderar:
-
 - Start Card
 - Timeline Card
-- DJ Card
-
-**Egenskaper:**
-- Card tillhör exakt en Player.
-- Card är persistent under hela Game.
-- Alla Card-typer räknas lika i total Card count.
-- En Player kan få högst 1 Card per Round.
-- Ett Card kan ha en markering (t.ex. ⭐). Betydelse och användning definieras i `04-round` och `02-game`.
+- Oracle Card
 
 ## Start Card
 
@@ -170,21 +167,21 @@ Ett Card som skapas vid Game-start och etablerar Playerns initiala timeline-posi
 ## Timeline Card
 
 **Definition:**
-Ett Card som en Player får när hen gissar rätt i en Round.
+Ett Card som representerar rundans Song och placeras i Playerns timeline.
 
 **Egenskaper:**
 - Innehåller Song och year.
 - Placeras i Playerns timeline.
 - Påverkar framtida timeline-guessing.
 
-## DJ Card
+## Oracle Card
 
 **Definition:**
-Ett Card som utsedd DJ får vid korrekt gissning i sin egen Round.
+Ett Card som representerar rundans Song och tilldelas Oracle vid korrekt Prediction.
 
 **Egenskaper:**
-- Räknas som Card i total Card count.
-- Är inte en del av Playerns timeline-struktur.
+- Innehåller Song och year.
+- Räknas (precis som alla typer av Card) i total Card count.
 - Påverkar inte framtida timeline-guessing.
 
 ## Joker
@@ -232,7 +229,8 @@ En kuraterad samling av Songs.
 
 - Game består av Cycles.
 - Cycle består av Rounds.
-- Round har en utsedd DJ.
+- Round har en Oracle.
 - En Round kan ha högst en aktiv Performance åt gången.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokrar genereras genom Round.
+- Oracle Prediction gäller alltid aktiv Performance.

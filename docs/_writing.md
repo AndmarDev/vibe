@@ -1,6 +1,6 @@
 # docs/_writing.md
 
-## Syfte
+# Syfte
 Detta dokument definierar **hur dokumentationen i detta projekt ska skrivas**.
 
 Syftet är att:
@@ -10,11 +10,11 @@ Syftet är att:
 
 Detta dokument beskriver **skrivprinciper**, inte arbetsprocess.
 
-## Normativt vs informativt innehåll
+# Normativt vs informativt innehåll
 
 Dokumentationen använder två typer av text:
 
-### Normativt
+## Normativt
 Normativ text:
 - definierar begrepp
 - låser regler och betydelser
@@ -27,7 +27,7 @@ Normativ text ska:
 
 Om normativ text ändras, ändras systemets kanon.
 
-### Informativt
+## Informativt
 Informativ text:
 - förklarar varför något är som det är
 - ger intuition eller motivation
@@ -38,7 +38,7 @@ Informativ text ska:
 - aldrig motsäga normativ text
 - kunna tas bort utan att reglerna ändras
 
-## Begreppsanvändning
+# Begreppsanvändning
 
 - Endast begrepp som är definierade i dokumentationen är normativa.
 - Samma begrepp ska alltid användas med samma innebörd.
@@ -50,13 +50,23 @@ Begreppsändringar följer projektets etablerade process (se `process.md`).
 Tekniska namn i kod eller API är inte normativa begrepp.
 De får inte ändra eller utöka spelreglernas innebörd.
 
-## Språklig disciplin
+# Språklig disciplin
 
 Endast definierade engelska domänbegrepp får användas som substantiv.
 Övrig löptext ska använda etablerad svenska.
 Odefinierade engelska ord får inte introduceras informellt.
 
-## Exempel
+### Undantag: user-rules.md (spelmanual)
+
+`user-rules.md` får använda svenska spelarord som domänsubstantiv
+(t.ex. “spel”, “spelare”, “varv”, “runda”, “kort”).
+
+Krav:
+- Varje spelarord ska ha en 1:1-mappning mot exakt ett kanonbegrepp i 01–08.
+- Samma spelarord ska alltid användas för samma kanonbegrepp.
+- Manualen får inte introducera nya begrepp. Den får endast återberätta kanon.
+
+# Exempel
 
 Exempel används:
 - endast när de tillför precision
@@ -64,7 +74,7 @@ Exempel används:
 
 Exempel är alltid **informativa**, aldrig normativa, även om de råkar se rimliga ut.
 
-## Korsreferenser
+# Korsreferenser
 
 Korsreferenser används **med omdöme**, när de ökar tydlighet eller
 hjälper läsaren att förstå dokumentens avgränsning.
@@ -82,7 +92,7 @@ Korsreferenser används **inte**:
 
 I de flesta fall ska samband uttryckas genom konsekvent begreppsanvändning i löptexten.
 
-## Dokumentens ansvar
+# Dokumentens ansvar
 
 Varje dokument ska:
 - vara så självbärande som möjligt
@@ -96,7 +106,7 @@ Dokument är:
 
 De är systemets **normativa referens**.
 
-## Disciplin: Nivåläckage
+# Disciplin: Nivåläckage
 
 Ett dokument får inte definiera eller omtolka regler,
 begrepp eller tillstånd som ägs av en annan nivå i modellen.
@@ -107,7 +117,7 @@ Om en regel hör till en annan nivå ska den:
 
 Normativ auktoritet får aldrig spridas över flera dokument.
 
-## Stil och ton
+# Stil och ton
 
 - Föredra precision framför pedagogik.
 - Undvik metaforer.
@@ -117,7 +127,7 @@ Normativ auktoritet får aldrig spridas över flera dokument.
 - Beskriv regler som normala flöden; dramatisera inte edge cases.
 - Undvik algoritmiska beskrivningar om inte exakt beräkningsregel är nödvändig för modellen.
 
-## Sammanfattning
+# Sammanfattning
 
 - Skriv lite, men exakt.
 - Lås begrepp tidigt.

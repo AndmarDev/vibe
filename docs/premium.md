@@ -1,38 +1,71 @@
-
 # docs/premium.md
 
-## Syfte
+# Syfte
 
-Detta dokument definierar Premium som en produktpolicy:
-vilka kapabiliteter som är tillgängliga för ett ägarskap (entitlement).
+Detta dokument definierar Premium och relaterade entitlements.
 
-Premium ändrar inte spelmodellen i 01–08.
+Premium reglerar kapabiliteter vid skapande av Game.
+Premium påverkar aldrig spelregler, state machines eller transitions.
 
-## NORMATIVT: Definition
+Spelmodellen i dokument 01–08 är identisk oavsett Premium-status.
 
-Premium är en entitlement som ger utökade kapabiliteter inom spelets befintliga ram.
+# NORMATIVT: Entitlements
 
-Premium är inte ett eget spel, inte ett spel-läge och inte en alternativ regeluppsättning.
+Följande entitlements kan förekomma:
 
-## NORMATIVT: Kapabiliteter
+- Free (ingen entitlement)
+- Premium
+- Mix (enskilda mix-köp)
 
-Premium påverkar endast kapabiliteter vid skapande av Game:
+Entitlements är knutna till ägare (store_user), inte till enskilda Players i ett Game.
 
-- vilka Mixes som får väljas
-- vilket maxPlayers som är tillåtet
+# NORMATIVT: Player-gränser
 
-Premium förändrar inte spelets regler, state machines eller transitions.
+Vid skapande av Game gäller:
 
-GameState, CycleState och RoundState är identiska oavsett Premium-status.
+Free:
+- minPlayers = 3
+- maxPlayers = 5
 
-## NORMATIVT: Kontrollpunkt
+Premium:
+- minPlayers = 3
+- maxPlayers = 10
 
-Entitlement kontrolleras endast vid skapande eller ändring av Game-konfiguration.
+Player-gränser låses vid `startGame`.
 
-Ingen entitlement-kontroll sker under en aktiv Round.
+Premium påverkar inte Player-count under en pågående Round.
 
-## INFORMATIVT: Motivation
+# NORMATIVT: Mix-kapabiliteter
 
-Premium hålls separat för att undvika två spel.
-Spelreglerna är kanon (01–07). Premium begränsar eller utökar endast val
-vid skapande och konfiguration.
+Free:
+- tillgång till basmix (t.ex. All Time Hits)
+
+Premium:
+- tillgång till Premium-mixar (t.ex. Anthems, Evergreens)
+
+Mix-entitlement:
+- ger tillgång till specifik köpt Mix
+
+Premium är ett krav för att få köpa extra Mixar, men Mix är en separat entitlement.
+
+Vid skapande av Game väljer skaparen exakt en Mix.
+Endast Mixar som är tillgängliga enligt ägarens entitlements får väljas.
+
+# NORMATIVT: Kontrollpunkt
+
+Entitlements kontrolleras endast vid:
+
+- skapande av Game
+- ändring av Game-konfiguration före `startGame`
+
+Vid `startGame` fastställs Game-konfigurationen, inklusive `maxPlayers`.
+
+Efter `startGame` sker ingen ytterligare entitlement-kontroll som påverkar deltagande eller kapacitet.
+
+Entitlements som ändras under spelets gång påverkar endast framtida Games.
+
+# INFORMATIVT: Princip
+
+Spelet är ett och samma för alla.
+
+Premium begränsar eller utökar endast vilka konfigurationsval som är tillåtna innan spelet startar.

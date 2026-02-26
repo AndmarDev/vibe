@@ -1,62 +1,84 @@
 # docs/08-candidates.md
 
-## Syfte
+# Syfte
 
-Detta dokument definierar vilka svarsalternativ som kan visas för GuessParts `Title` och `Artist`.
+Detta dokument definierar CandidateSet.
 
-Timeline omfattas inte av detta dokument.
+CandidateSet anger vilka svarsalternativ som får visas för GuessParts `Title` och `Artist`.
 
-# NORMATIVT: CandidateSet
+GuessPart `Timeline` omfattas inte av detta dokument.
 
-För varje aktiv Performance och GuessPart (`Title` respektive `Artist`) ska backend generera ett CandidateSet.
+# NORMATIVT: Definition
+
+För varje aktiv Performance och GuessPart `Title` respektive `Artist`
+ska backend generera ett CandidateSet.
 
 Ett CandidateSet består av två listor:
 
-- `full` (exakt 10 alternativ)
-- `reduced` (exakt 3 alternativ)
+- `full`
+- `reduced`
 
-Båda listorna är gemensamma för alla Players i samma Round.
+CandidateSet är normativ indata till rules; frontend får aldrig ändra det.
 
-CandidateSet är indata till spelreglerna.
-Rules får CandidateSet som indata.
-Frontend får inte ändra det.
+CandidateSet är gemensamt för alla Players i samma Round och Performance.
+
+# NORMATIVT: Strukturkrav
+
+För varje GuessPart (`Title` och `Artist`) gäller:
+
+- `full` innehåller exakt 10 alternativ.
+- `reduced` innehåller exakt 3 alternativ.
+- Inga dubletter får förekomma inom respektive lista.
+- `reduced` är en delmängd av `full`.
+- Ordningen i `reduced` ska följa ordningen i `full`.
+- Korrekt svar måste finnas i både `full` och `reduced`.
 
 # NORMATIVT: Relation till Joker
 
 Joker skapar inga nya alternativ.
 
-För `Title` och `Artist` väljer spelet vilken lista som visas:
+För GuessPart `Title` och `Artist` avgör Joker vilken lista som visas:
 
-- 0 Jokrar → `full`
-- 1 Joker → `reduced`
+- 0 registrerade Jokrar → visa `full`
+- 1 registrerad Joker → visa `reduced`
 
 Regler för när Joker får användas definieras i `07-joker`.
 
-# NORMATIVT: Krav på CandidateSet
+# NORMATIVT: Relation till Performance
 
-För varje GuessPart (`Title` och `Artist`) gäller:
+CandidateSet är knutet till en specifik Performance.
 
-- `full` innehåller exakt 10 alternativ och inga dubletter.
-- `reduced` innehåller exakt 3 alternativ och inga dubletter.
-- `reduced` är en delmängd av `full`.
-- Ordningen i `reduced` följer ordningen i `full`.
-- Korrekt svar finns i både `full` och `reduced`.
+Om Performance ersätts under `GUESSING`:
 
-# NORMATIVT: Ansvar
+- tidigare CandidateSet upphör att gälla
+- nytt CandidateSet måste genereras
+- alla GuessParts börjar om från början
+
+# NORMATIVT: Ansvarsfördelning
 
 ## Backend
 
-Backend skapar och sparar CandidateSet per Performance och GuessPart (`Title` och `Artist`).
+Backend ska:
+
+- generera CandidateSet per Performance och GuessPart
+- säkerställa att korrekt svar inkluderas
+- lagra CandidateSet tillsammans med Performance
 
 ## Rules
 
-Rules:
-- kontrollerar att CandidateSet uppfyller kraven ovan
-- avgör vilken lista som ska användas beroende på Joker-användning
+Rules ska:
 
-Om rules underkänner CandidateSet för `Title` eller `Artist` får Rounden inte gå vidare till reveal.
-Backend ska då avbryta Rounden genom att sätta RoundState till `ABORTED`.
+- validera att CandidateSet uppfyller strukturkraven
+- avgöra vilken lista (`full` eller `reduced`) som används
+  för respektive Player baserat på registrerad Joker-användning
+
+Om CandidateSet inte uppfyller strukturkraven får Round inte övergå till `REVEALED`.
+
+I detta fall ska Round övergå till `ABORTED`.
 
 ## Frontend
 
-Frontend visar endast den lista som gäller för aktuell Player.
+Frontend ska:
+
+- visa den lista som rules anger
+- inte modifiera ordning eller innehåll

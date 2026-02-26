@@ -1,6 +1,6 @@
 # docs/process.md
 
-## Syfte
+# Syfte
 Detta dokument beskriver **arbetsprocessen och disciplinen** för projektet,
 som utvecklar ett **socialt musikspel**.
 
@@ -12,7 +12,7 @@ Syftet är att:
 
 Detta dokument beskriver **hur vi arbetar**, inte spelets innehåll och regler.
 
-## Grundprincip: Normativ riktning
+# Grundprincip: Normativ riktning
 
 Projektet har en tydlig normativ riktning:
 
@@ -28,7 +28,7 @@ men får aldrig ändra betydelsen av högre nivåer.
 Om en motsägelse uppstår ska dokumentationen uppdateras –
 inte semantiken i koden.
 
-## Begreppsdisciplin
+# Begreppsdisciplin
 
 Kod får inte introducera nya **domänbegrepp** utan att arbetet pausas
 och begreppen först diskuteras och dokumenteras.
@@ -47,7 +47,7 @@ När ett behov av ett nytt sådant begrepp uppstår gäller:
 
 Planen är planen tills planen ändras.
 
-## Dokumentens roll
+# Dokumentens roll
 
 Dokumenten är **normativa**, inte beskrivande i efterhand.
 
@@ -58,7 +58,7 @@ Dokumenten är **normativa**, inte beskrivande i efterhand.
 Kod får aldrig i efterhand “förklaras” genom att dokumentationen
 anpassas för att passa redan skriven kod utan begreppsdiskussion.
 
-## Spelets normativa modell
+# Spelets normativa modell
 
 Dokument 01–08 utgör spelets normativa modell.
 
@@ -71,8 +71,7 @@ Tillsammans beskriver de både hur spelet fungerar och hur dess regler är struk
 Övriga dokument (t.ex. Premium, responsmodell, implementation)
 får inte ändra eller omtolka denna modell.
 
-
-## Korsreferenser mellan dokument
+# Korsreferenser mellan dokument
 
 Dokument ska i huvudsak vara **självbärande**.
 
@@ -82,7 +81,7 @@ Korsreferenser används endast när de är nödvändiga för förståelse, t.ex.
 
 Övriga samband uttrycks genom konsekvent språk, inte genom listor av “se även”.
 
-## Arbetsordning (prioritet)
+# Arbetsordning (prioritet)
 
 Arbetet sker i följande ordning:
 
@@ -95,7 +94,7 @@ Arbetet sker i följande ordning:
 Databasschema och lagringsdetaljer designas **sent** för att spegla
 låsta begrepp – inte för att forma dem.
 
-## AI-verktyg (Claude Code)
+# AI-verktyg (Claude Code)
 
 AI-verktyg används som:
 - implementatör
@@ -113,7 +112,7 @@ AI-verktyg får inte:
 
 Vid osäkerhet ska arbetet pausas och frågan lyftas till begreppsnivå.
 
-## Sammanfattning
+# Sammanfattning
 
 - Begrepp först, kod sen
 - Hellre paus än slentrian
