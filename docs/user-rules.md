@@ -17,6 +17,7 @@ I manualen använder vi spelarord:
 - *varv* = `Cycle`
 - *runda* = `Round`
 - *kort* = `Card`
+- *stjärna* = `Star`
 
 Manualen inför inga egna begrepp; den återger 01–07 med spelarord.
 
@@ -111,6 +112,14 @@ Jokern används på tidslinjen och visar vilket decennium låten tillhör.
 Jokern påverkar inte titel eller artist.
 
 Om värden byter låt innan rundan låses får du tillbaka de jokrar du använt på den låten.
+
+## Stjärna
+
+Om du både placerat låten rätt i tidslinjen och gissat titel
+och artist rätt får ditt låtkort en stjärna (⭐).
+
+Stjärnan ger inga extra kort, men används som sista utslagsgivare
+om flera spelare har lika många kort.
 
 ## Spelets slut
 

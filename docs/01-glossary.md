@@ -182,6 +182,9 @@ Ett Card som representerar en Song som en Player placerat korrekt i sin tidslinj
 - Placeras i Playerns timeline.
 - Påverkar framtida Placement.
 - Räknas i slutresultatet.
+- Kan ha en Star (⭐) om både Placement, Title Guess och Artist Guess var korrekta i samma Round.
+- Star påverkar inte tilldelning av kortet.
+- Star används endast som sista utslagsgivare vid lika i slutlig ranking.
 
 ## Oracle Card
 
@@ -204,6 +207,19 @@ En resurs som en Player kan använda för att förenkla Placement i en Round.
 - Joker påverkar aldrig korrekt svar eller bedömning.
 - Joker kan endast användas på Placement.
 - Exakta regler för begränsningar, effekt, intjäning och saldo definieras i 07-joker.
+
+## Star (⭐)
+
+**Definition:**
+En markering på ett Song Card som visar att Playern i
+samma Round hade korrekt Placement, Title Guess och Artist Guess.
+
+**Egenskaper:**
+- En Star kan endast finnas på ett Song Card.
+- En Round kan ge högst en Star per Player.
+- Star är inte ett eget Card.
+- Star påverkar inte tidslinjen eller spelets flöde.
+- Star används endast som sista tie-break i slutlig ranking.
 
 # NORMATIVT: Music Model
 

@@ -178,7 +178,8 @@ Ranking bestäms i följande ordning:
 
 1. Antal kort i tidslinjen (högst vinner).
 2. Vid lika: antal Oracle Cards (högst vinner).
-3. Vid fortsatt lika: delad vinst.
+3. Vid fortsatt lika: antal Stars (⭐, högst vinner).
+4. Vid fortsatt lika: delad vinst.
 
 Endast Start Cards och Song Cards placeras i tidslinjen.
 
