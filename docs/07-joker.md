@@ -4,7 +4,7 @@
 
 Detta dokument definierar Joker.
 
-Joker är en resurs som en Player kan använda för att minska osäkerheten i en GuessPart.
+Joker är en resurs som en Player kan använda för att minska osäkerheten i Placement (tidslinjeplacering).
 
 Joker ändrar aldrig korrekt svar eller bedömning.
 
@@ -20,14 +20,32 @@ Joker ändrar aldrig korrekt svar eller bedömning.
 
 Joker kan vinnas endast vid övergång till `REVEALED`.
 
-En kvarvarande Player vinner 1 Joker om:
-- Timeline är korrekt
-- Title är korrekt
-- Artist är korrekt
+En kvarvarande Player (ej Oracle) vinner 1 Joker om:
+
+- både Title Guess och Artist Guess är korrekta.
+
+Joker tilldelas oberoende av om Placement var korrekt.
 
 En Player kan vinna högst 1 Joker per Round.
 
-Oracle kan inte vinna Joker i sin egen Round.
+# NORMATIVT: Användning
+
+- Joker får användas endast när Round är i `GUESSING`.
+- En Player får använda högst 1 Joker per Round.
+- Joker får användas endast om Playerns publika Joker-saldo är ≥ 1.
+- Joker får användas endast för Placement.
+- Oracle får inte använda Joker i sin egen Round.
+
+När en Player använder en Joker under `GUESSING` registreras den för den aktiva Performancen.
+Det publika Joker-saldot minskar först vid övergång till `REVEALED`.
+
+# NORMATIVT: Effekt
+
+När en Joker används för Placement visas vilket decennium låten tillhör, t.ex. 1980–1989.
+
+- Decenniet innehåller alltid det korrekta året.
+- Jokern påverkar bara Placement, inte Title Guess eller Artist Guess.
+- Jokern påverkar inte bedömningen.
 
 # NORMATIVT: Uppdatering av Joker-saldo vid Round-avslut
 
@@ -37,46 +55,10 @@ När Round övergår till `REVEALED` uppdateras varje kvarvarande Players Joker-
 2. Om Playern vinner en Joker i `REVEALED` ökas saldot med 1.
 3. Därefter begränsas saldot till intervallet 0–3.
 
-Registrerad användning som har annullerats (Performance-byte eller `ABORTED`)
-räknas inte och ger därför ingen minskning.
-
-# NORMATIVT: Användning
-
-- Joker får användas endast när Round är i `GUESSING`.
-- Oracle får inte använda Joker i sin egen Round.
-- En Joker används innan aktuell GuessPart submittas.
-- En Player får använda högst 1 Joker per GuessPart.
-
-När en Player använder en Joker under `GUESSING` registreras den för den aktiva Performancen.
-
-Det publika Joker-saldot minskar först vid övergång till `REVEALED`.
-
-Under `GUESSING` får en Player använda högst så många Jokrar
-som Playerns publika Joker-saldo medger, minus de Jokrar som
-redan är registrerade för den aktiva Performancen.
-
-# NORMATIVT: Effekt per GuessPart
-
-## Timeline
-
-När Joker används för GuessPart `Timeline` visas ett tidsintervall som motsvarar korrekt decennium.
-
-Tidsintervallet:
-- innehåller alltid korrekt år
-- påverkar inte bedömningen
-- påverkar inte andra GuessParts
-
-## Title och Artist
-
-För GuessPart `Title` och `Artist` minskar Joker antalet alternativ som visas.
-
-Alternativen kommer från CandidateSet i `08-candidates`:
-- 0 Jokrar → visa `full`
-- 1 Joker → visa `reduced`
-
 # NORMATIVT: Relation till Performance-byte
 
 Om Performance ersätts under `GUESSING`:
+
 - all registrerad Joker-användning för den tidigare Performancen annulleras
 - annullerad användning påverkar inte Joker-saldot
 

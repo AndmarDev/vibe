@@ -4,7 +4,7 @@
 
 Detta dokument definierar Performance.
 
-Performance är den konkreta uppspelningen av en Recording som används i en Round.
+Performance är den konkreta instansen av en Recording som används i en Round.
 
 Round är spelhändelsen.
 Performance är den aktuella låten som spelas och gissas på.
@@ -13,11 +13,10 @@ Performance är den aktuella låten som spelas och gissas på.
 
 En Performance är en instans av en Recording som används i en Round.
 
-En Round kan över tid referera flera Performances (om Host "bytt låt"),
-men har alltid högst en aktiv Performance.
-
-Performance har ingen egen state machine.
-Den styrs helt av RoundState.
+- En Performance tillhör exakt en Round.
+- En Round kan över tid referera flera Performances.
+- En Round har alltid högst en aktiv Performance.
+- Performance har ingen egen state machine. Den styrs helt av RoundState.
 
 # NORMATIVT: Aktiv Performance
 
@@ -25,7 +24,8 @@ Den styrs helt av RoundState.
 - I tillståndet `GUESSING` ska exakt en Performance vara aktiv.
 - Alla Guess gäller alltid aktiv Performance.
 - Oracle Prediction gäller alltid aktiv Performance.
-- Bedömning och tilldelning baseras på den Performance som är aktiv vid övergång till `LOCKED`.
+- Bedömning och tilldelning baseras på den Performance som är aktiv
+  i det ögonblick då Round går från `GUESSING` till `LOCKED`.
 
 # NORMATIVT: Första Performance
 
@@ -40,7 +40,7 @@ När en Round övergår från `READY` till `GUESSING`:
 
 Aktiv Performance kan ersättas endast när Round är i `GUESSING`.
 
-Byte triggas av Host (dvs Host "byter låt").
+Byte triggas av Host.
 
 Byte innebär att:
 
@@ -52,27 +52,17 @@ RoundState ändras inte vid byte.
 
 Byte av Performance påverkar inte Oracle-rotation och räknas inte som en avslutad Oracle-tur.
 
-# NORMATIVT: Konsekvenser av byte
+# NORMATIVT: Reset vid Performance-byte
 
-När en Performance ersätts under `GUESSING`:
+När en Performance ersätts under `GUESSING` ska Roundens
+gissningskontext återställas för den tidigare Performancen:
 
-- Alla Guess kopplade till den tidigare Performancen upphör att gälla.
-- Alla registrerade Joker-användningar för den tidigare Performancen annulleras.
+- Alla Guesses kopplade till den tidigare Performancen upphör att gälla.
+- Alla registrerade Joker-användningar kopplade till den tidigare Performancen annulleras.
 - Oracle Prediction för den tidigare Performancen ogiltigförklaras.
-- Annullerad Joker-användning påverkar inte Joker-saldot.
+
+Annullerad Joker-användning påverkar inte Joker-saldot.
 
 Den nya Performancen behandlas som en helt ny gissningssituation.
 
 Oracle måste lämna en ny Prediction för den nya Performancen innan Round kan låsas.
-
-# NORMATIVT: Avgränsning
-
-Performance reglerar inte:
-
-- Oracle-rotation
-- RoundState-övergångar
-- tilldelning av Cards
-- tilldelning av Jokrar
-- huruvida en `ABORTED` Round räknas som genomförd Oracle-tur
-
-Dessa regler definieras i andra dokument.

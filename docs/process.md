@@ -60,7 +60,7 @@ anpassas för att passa redan skriven kod utan begreppsdiskussion.
 
 # Spelets normativa modell
 
-Dokument 01–08 utgör spelets normativa modell.
+Dokument 01–07 utgör spelets normativa modell.
 
 De definierar:
 - spelregler (vad som är tillåtet, förbjudet och hur utfall fastställs)

@@ -59,10 +59,10 @@ Odefinierade engelska ord får inte introduceras informellt.
 ### Undantag: user-rules.md (spelmanual)
 
 `user-rules.md` får använda svenska spelarord som domänsubstantiv
-(t.ex. “spel”, “spelare”, “varv”, “runda”, “kort”).
+(t.ex. “spel”, “värd”, “spelare”, “varv”, “runda”, “kort”).
 
 Krav:
-- Varje spelarord ska ha en 1:1-mappning mot exakt ett kanonbegrepp i 01–08.
+- Varje spelarord ska ha en 1:1-mappning mot exakt ett kanonbegrepp i 01–07.
 - Samma spelarord ska alltid användas för samma kanonbegrepp.
 - Manualen får inte introducera nya begrepp. Den får endast återberätta kanon.
 

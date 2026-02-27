@@ -7,7 +7,7 @@ Detta dokument definierar Premium och relaterade entitlements.
 Premium reglerar kapabiliteter vid skapande av Game.
 Premium påverkar aldrig spelregler, state machines eller transitions.
 
-Spelmodellen i dokument 01–08 är identisk oavsett Premium-status.
+Spelmodellen i dokument 01–07 är identisk oavsett Premium-status.
 
 # NORMATIVT: Entitlements
 

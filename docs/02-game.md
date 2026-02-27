@@ -7,6 +7,13 @@ Detta dokument definierar Game.
 Game är den övergripande ramen för Players, Cycles och Rounds.
 Här definieras när ett spel kan startas, avslutas och hur slutlig ranking bestäms.
 
+# INFORMATIVT: En aktiv Game per Host
+
+En Host kan endast ha ett aktivt Game åt gången.
+
+Om ett Game inte avslutas kan Host inte skapa ett nytt.
+Detta påverkar inte spelreglerna, utan är en systembegränsning.
+
 # NORMATIVT: GameState
 
 Game har exakt ett av följande tillstånd:
@@ -27,15 +34,13 @@ Game är skapat men ännu inte startat.
 
 Om en Player tas bort i `LOBBY` innebär det att Playern inte längre ingår i spelet.
 Eftersom spelet inte har startat finns inga Cycles eller Rounds att påverka.
-Borttagning kan däremot innebära att Playerns startkort (startår) inte längre ingår i spelet.
-Övriga Players påverkas inte.
 
 ## IN_PROGRESS
 
 Game pågår.
 
 - Cycles och Rounds skapas och spelas sekventiellt.
-- Oracle-rotation är deterministisk och sker enligt regler i `03-cycle`.
+- Oracle-rotation är deterministisk enligt regler i `03-cycle`.
 - Host är första Oracle i varje Cycle, därefter följer övriga Players i join-ordning.
 - Host kan ta bort Players.
 - Sentillkomna Players kan ansluta endast när aktuell Cycle är i `BOUNDARY_DECISION`.
@@ -60,7 +65,7 @@ Game är avslutat.
 # NORMATIVT: Startår
 
 Varje Player ska innan `startGame` ange ett startår.
-Detta blir Playerns startkort och början på Playerns tidslinje.
+Detta blir Playerns Start Card och början på Playerns tidslinje.
 
 Startåret:
 
@@ -89,17 +94,18 @@ innan nästa Cycle kan startas.
 - Triggas av Host.
 - Kan triggas när som helst.
 
-Om `finishGame` triggas när Game är i `IN_PROGRESS`
-och det finns en aktiv Round som inte nått `REVEALED`,
-ska den Rounden först övergå till `ABORTED`.
+Om `finishGame` triggas när Game är i `IN_PROGRESS` och det finns en aktiv
+Round som inte nått `REVEALED`, ska den Rounden först övergå till `ABORTED`.
 
 Efter att Rounden övergått till `ABORTED` övergår Game till `FINISHED`.
 
-Ingen bedömning, tilldelning av Cards eller uppdatering
-av Joker-saldo ska ske för den avbrutna Rounden.
-Detta inkluderar även Prediction.
+Ingen tilldelning av Song Cards, Oracle Cards eller uppdatering av
+Joker-saldo ska ske för den avbrutna Rounden.
 
-En avbruten Round kan aldrig generera Timeline Cards, Oracle Card, Jokrar eller ⭐.
+En avbruten Round kan aldrig generera:
+- Song Cards
+- Oracle Card
+- Jokrar
 
 # NORMATIVT: Borttagning av Players
 
@@ -112,8 +118,11 @@ En borttagen Player:
 - ingår inte i framtida Oracle-rotation
 - ingår inte i slutlig ranking
 
-Om den borttagna Playern är Oracle i en aktiv Round gäller `04-round`:
-Rounden avbryts och övergår till `ABORTED`.
+När en Player upphör att vara kvarvarande ingår varken Playern eller dess publika
+artefakter (t.ex. tidslinje, Cards, Joker-saldo) i Snapshot, se `backend-response-model`.
+
+Om den borttagna Playern är Oracle i en Round som inte nått
+`REVEALED` övergår Rounden till `ABORTED` enligt `04-round`.
 
 Host kan inte tas bort från Game.
 
@@ -152,24 +161,25 @@ Game får startas (dvs gå från `LOBBY` till `IN_PROGRESS`) endast om:
 Endast Cycles som har nått state `FINISHED` räknas i slutlig ranking.
 
 En Cycle övergår till `FINISHED` när:
+
 - Host i `BOUNDARY_DECISION` väljer att starta en ny Cycle, eller
 - Host i `BOUNDARY_DECISION` väljer att avsluta Game.
 
-Om Game avslutas medan en Cycle är i `ACTIVE` räknas den Cyclen inte i slutlig ranking.
+Om Game avslutas medan en Cycle är i `ACTIVE` räknas
+den Cyclen inte i slutlig ranking.
+
+Om Game övergår till `FINISHED` utan att någon Cycle har
+nått `FINISHED` fastställs ingen ranking.
 
 Vid övergång till `FINISHED` fastställs ranking utifrån
-samtliga Cards som tilldelats i Cycles som är `FINISHED`.
-
-Oracle Card räknas som ett vanligt Card i total Card count.
+samtliga kort i tidslinjen för varje kvarvarande Player.
 
 Ranking bestäms i följande ordning:
 
-1. Total Card count (högst vinner).
-2. Vid lika total Card count: antal ⭐ (högst vinner).
+1. Antal kort i tidslinjen (högst vinner).
+2. Vid lika: antal Oracle Cards (högst vinner).
 3. Vid fortsatt lika: delad vinst.
 
-⭐ är en markering som endast kan finnas på ett Timeline Card.
+Endast Start Cards och Song Cards placeras i tidslinjen.
 
-⭐ räknas inte som ett separat Card.
-
-⭐ kan aldrig finnas på ett Oracle Card.
+Oracle Cards placeras inte i tidslinjen och räknas endast som utslagsgivare.

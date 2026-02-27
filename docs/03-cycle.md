@@ -6,7 +6,8 @@ Detta dokument definierar Cycle.
 
 En Cycle är ett varv runt bordet där varje Player är Oracle varsin gång.
 
-Cycle strukturerar Oracle-rotation och skapar en naturlig paus där spelet kan fortsätta eller avslutas.
+Cycle strukturerar Oracle-rotation och skapar en naturlig paus
+där spelet kan fortsätta eller avslutas.
 
 # NORMATIVT: CycleState
 
@@ -36,9 +37,10 @@ och den senaste Rounden har nått `REVEALED`, övergår Cycle till `BOUNDARY_DEC
 
 Cycle är avslutad och väntar på beslut.
 
-- Inga nya Rounds kan längre skapas i denna Cycle.
-- Nya Players kan ansluta i detta tillstånd. En Player som ansluter nu ingår först
-  i nästa Cycle och måste ange ett giltigt startår innan nästa Cycle kan starta.
+- Inga nya Rounds kan skapas i denna Cycle.
+- Nya Players kan ansluta i detta tillstånd.
+  En Player som ansluter nu ingår först i nästa Cycle
+  och måste ange ett giltigt startår innan nästa Cycle kan startas.
 - Host väljer att:
   - starta en ny Cycle, eller
   - avsluta Game.
@@ -63,19 +65,20 @@ Cycle är avslutad.
 
 Oracle-rotation definieras per Cycle och är deterministisk.
 
-Oracle-rotationen för en Cycle beräknas från de Players som ingår i Game
-när Cyclen skapas i state `ACTIVE`.
-Players som ansluter i `BOUNDARY_DECISION` påverkar inte den avslutade Cyclen,
-utan ingår först i rotationen för nästa Cycle.
+Oracle-rotationen för en Cycle beräknas från de Players
+som ingår i Game när Cyclen skapas i state `ACTIVE`.
+
+Players som ansluter i `BOUNDARY_DECISION` påverkar inte den
+avslutade Cyclen, utan ingår först i rotationen för nästa Cycle.
 
 - Host är alltid första Oracle i varje Cycle.
 - Därefter följer övriga Players i join-ordning.
 - Varje Player är Oracle exakt en gång per Cycle.
-- Endast Players som fortfarande ingår i Game beaktas.
+- Endast kvarvarande Players beaktas.
 
 Rotationen påverkas inte av:
 
-- antal vunna Cards
+- antal Cards
 - antal Jokrar
 - tidigare resultat
 
@@ -86,8 +89,8 @@ Om en Player tas bort före sin Oracle-tur hoppar rotationen över den Playern.
 - En Cycle består av 0..N Rounds.
 - En Round tillhör exakt en Cycle.
 - Oracle för en Round utses enligt Cycle-rotationen.
-- Endast en Round kan vara i state `READY`, `GUESSING`,
-  `LOCKED` eller `REVEALED` per Cycle vid en given tidpunkt.
+- Endast en Round kan vara i state `READY`, `GUESSING`, `LOCKED`
+  eller `REVEALED` per Cycle vid en given tidpunkt.
 
 # NORMATIVT: Oracle-tur och avslutad Round
 
@@ -95,15 +98,24 @@ Rounds skapas sekventiellt i en Cycle.
 
 En Oracle-tur räknas som genomförd endast när Rounden når `REVEALED`.
 
-Om en Round når `REVEALED` anses den utsedda Oracle ha genomfört sin tur.
+När en Round når `REVEALED` anses den utsedda Oracle ha genomfört sin tur.
 Nästa Round får nästa Oracle enligt Cycle-rotationen.
 
-Om en Round övergår till `ABORTED` anses ingen Player ha genomfört någon Oracle-tur i den Rounden.
-Detta gäller oavsett orsak till `ABORTED`, inklusive att Oracle har tagits bort under Rounden.
+Om en Round övergår till `ABORTED` anses ingen
+Player ha genomfört någon Oracle-tur i den Rounden.
+Detta gäller oavsett orsak till `ABORTED`,
+inklusive att Oracle har tagits bort före `REVEALED`.
+
 Om Round blev `ABORTED` utses Oracle för nästa Round deterministiskt:
 
-- Om den senast utsedda Oracle fortfarande är kvarvarande → samma Oracle igen.
-- Annars → nästa kvarvarande Player enligt Cycle-rotationen.
+- Om den senast utsedda Oracle fortfarande är kvarvarande
+  → samma Oracle igen.
+- Annars
+  → nästa kvarvarande Player enligt Cycle-rotationen.
+
+Om Oracle tas bort när Round redan är i `REVEALED` påverkas inte Oracle-turen.
+I detta fall ska spelet fortsätta automatiskt till nästa
+Round eller till `BOUNDARY_DECISION` enligt denna Cycles regler.
 
 # NORMATIVT: Rättviseprincip
 

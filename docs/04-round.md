@@ -5,7 +5,8 @@
 Detta dokument definierar Round.
 
 En Round är den spelhändelse där en Performance spelas,
-Players lämnar Guess, Oracle gör Prediction och resultat fastställs.
+Players placerar låten i sin tidslinje samt gissar Title och Artist,
+Oracle gör Prediction, och resultat fastställs.
 
 Round äger sin state machine och fastställer tilldelning av Cards och Jokrar.
 
@@ -21,12 +22,11 @@ Varje Round har exakt ett av följande tillstånd:
 
 ## READY
 
-Round är skapad och en Oracle är utsedd.
+En Oracle är utsedd.
 
-Oracle är den som i detta läge startar Round.
+Round är skapad, väntar på att Oracle startar.
 
-När Round startas:
-
+När Oracle startar Round:
 - en Performance skapas
 - den sätts som aktiv
 - RoundState sätts till `GUESSING`
@@ -37,51 +37,61 @@ Round pågår.
 
 - Exakt en Performance är aktiv.
 - Host ansvarar för uppspelning av låten.
+- Host kan byta låt (byta Performance) enligt `05-performance`.
 - Alla kvarvarande Players utom Oracle lämnar Guess.
 - Oracle gör Prediction.
 - Players får använda Jokrar enligt `07-joker`.
 - Oracle använder inga Jokrar.
-- Host kan byta Performance (byta låt) enligt `05-performance`.
 
 Prediction är knuten till aktiv Performance.
 Prediction kan ändras så länge Round är i `GUESSING`.
-När Round övergår till `LOCKED` är Prediction fastställd.
 
-Om Performance byts under `GUESSING`:
-
+Om Host byter låt under `GUESSING` (byter Performance) ska:
 - tidigare Guess ogiltigförklaras,
 - tidigare Prediction ogiltigförklaras,
 - ny Performance blir aktiv.
+
+Oracle triggar övergången från `GUESSING` till `LOCKED`.
+Precondition för att gå till `LOCKED`:
+- En Prediction finns för aktiv Performance.
 
 ## LOCKED
 
 Round är låst.
 
-- Inga nya GuessParts får skickas in.
+- Inga nya Guess får skickas in.
 - Prediction kan inte ändras.
 
-Precondition för `GUESSING → LOCKED`:
-- En Prediction finns för aktiv Performance.
+Utfallet fastställs i `LOCKED`.
+Ingen ytterligare input kan påverka utfallet så länge Round förblir i `LOCKED`.
 
-Oracle kan låsa upp Round som då återgår till `GUESSING`.
+Oracle triggar övergången från `LOCKED` till `REVEALED`.
+
+Oracle kan i även låsa upp Round som då går från `LOCKED` till `GUESSING`.
+I detta fall är utfallet inte fastställt.
 
 ## REVEALED
 
 Reveal har genomförts.
+När Round går till `REVEALED` publiceras det fastställda utfallet.
+Resultatet som visas i `REVEALED` är det som fastställdes när Round låstes.
 
-Vid övergången till `REVEALED` är resultatet redan fastställt.
-
-- Samtliga GuessParts bedöms.
+- Placement bedöms.
+- Title Guess bedöms.
+- Artist Guess bedöms.
 - Prediction bedöms.
 - Cards tilldelas.
 - Jokrar tilldelas.
 - Joker-saldon fastställs.
 
-`REVEALED` är ett enda terminalt tillstånd.
+`REVEALED` är ett terminalt tillstånd.
 Eventuell stegvis visning av resultat (t.ex. år → titel/artist → prediction)
 är en presentationsfråga och utgör inte separata tillstånd i modellen.
 
-Round är avslutad och kan inte återgå till tidigare tillstånd.
+Round kan inte återgå till tidigare tillstånd.
+
+Om Oracle tas bort när Round är i `REVEALED` ska spelet fortsätta automatiskt
+till nästa Round eller till `BOUNDARY_DECISION` enligt regler i `03-cycle`.
 
 ## ABORTED
 
@@ -103,107 +113,79 @@ Round är avbruten.
 - `GUESSING` → `ABORTED`
 - `LOCKED` → `ABORTED`
 
-En Round kan också bli `ABORTED`:
+En Round kan också bli `ABORTED` om:
 
-- när Host avslutar Game (`02-game`)
-- om speldata är ogiltig (t.ex. ogiltigt kandidatpaket enligt `08-candidates`)
+- Host avslutar Game (`02-game`)
+- Host tar bort spelare och antalet kvarvarande Players understiger `minPlayers`
 
 Inga andra övergångar är tillåtna.
+
+# NORMATIVT: Oracle vs. Host
+
+Oracle ansvarar för Roundens tillståndsövergångar, dvs styr RoundState.
+
+Host ansvarar för ljuduppspelning och kan trigga byte av Performance (byta låt)
+enligt regler i `05-performance`.
+Host kan också göra att en Round blir `ABORTED` enligt regler ovan.
 
 # NORMATIVT: Oracle
 
 Oracle leder Roundens transitions.
 
 Oracle:
-
 - startar Round
 - låser och låser upp Round
-- initierar reveal
+- gör reveal
 - gör Prediction
 
 Oracle:
-
 - lämnar ingen Guess
 - använder inga Jokrar
 
-Om Oracle tas bort hanteras situationen enligt regler i nästa kapitel.
-Ingen annan roll kan ersätta Oracle i den Rounden.
+Om Oracle tas bort när Round är i `READY`, `GUESSING` eller
+`LOCKED` ska Round omedelbart övergå till `ABORTED` och:
+- ingen reveal får ske
+- ingen tilldelning får ske
 
-# NORMATIVT: Borttagning av Player
+Om Oracle tas bort när Round är i `REVEALED` påverkas inte resultatet.
 
-Om Host tar bort en Player medan Round pågår:
+# NORMATIVT: Bedömning av Guess
 
-- Playern räknas inte längre som deltagare i Rounden.
-- Playerns Guess ignoreras från och med borttagningen.
-- Playern kan inte få Card, Joker eller ⭐ i Rounden.
+Bedömning baseras på den Performance som var aktiv i det ögonblick
+då Round gick från `GUESSING` till `LOCKED`.
 
-### Om Oracle tas bort
+Varje Guess består av:
 
-Om Oracle tas bort från Game medan Round är i `READY`, `GUESSING` eller `LOCKED`
-ska Round omedelbart avbrytas och övergå till `ABORTED`.
+- Placement (tidslinje)
+- Title Guess
+- Artist Guess
 
-- Ingen reveal får ske.
-- Ingen bedömning eller tilldelning får ske.
-- Rounden räknas inte som genomförd Oracle-tur (se `03-cycle`).
+## Bedömning av Placement
 
-Om Oracle tas bort när Round redan är i `REVEALED` påverkas inget.
+Placement är korrekt om låtens year hamnar i korrekt ordning
+mellan de två befintliga Cards som Placementen placeras emellan.
 
-# NORMATIVT: Bedömning av GuessParts
+Det Card som ligger direkt före den valda positionen är vänsterkort.
+Det Card som ligger direkt efter är högerkort.
 
-Bedömning baseras på den Performance som är aktiv när Round övergår till `LOCKED`.
+Placement är korrekt om:
+- year ≥ vänsterkortets year (om vänsterkort finns), och
+- year ≤ högerkortets year (om högerkort finns).
 
-Varje GuessPart bedöms separat.
-
-## Bedömning av Timeline
-
-Timeline är korrekt om låtens år ligger i korrekt ordning
-relativt Playerns närmaste Timeline Cards:
-
-- year ≥ närmaste vänsterkort
-- year ≤ närmaste högerkort
-
-I annat fall är Timeline inkorrekt.
+I annat fall är Placement inkorrekt.
 
 ## Bedömning av Title och Artist
 
-Title och Artist är korrekt om korrekt kandidat har valts.
-
-Kandidatpaket definieras i `08-candidates`.
+Title Guess är korrekt om korrekt Title valts.
+Artist Guess är korrekt om korrekt Artist valts.
 
 # NORMATIVT: Bedömning av Prediction
 
-Prediction definieras i `06-guess-and-prediction`.
-Detta avsnitt definierar hur rundans svårighetsgrad fastställs.
+Prediction baseras enbart på antal korrekta Placements bland kvarvarande Players som får lämna Guess.
 
-Rundans svårighetsgrad bestäms utifrån andelen korrekta GuessParts i den aktuella Rounden.
-Endast kvarvarande Players som får lämna Guess ingår i beräkningen.
-Oracle lämnar ingen Guess i sin egen Round och bidrar därför inte till beräkningen.
-Varje sådan Player kan ha högst tre korrekta GuessParts: Timeline, Title och Artist.
+Oracle lämnar ingen Guess och ingår inte i beräkningen.
 
-**Steg 1 – Möjliga GuessParts**
-
-Antal möjliga GuessParts är: antal gissande Players multiplicerat med tre.
-
-**Steg 2 – Faktiskt korrekta GuessParts**
-
-Summera alla korrekta GuessParts för dessa Players.
-
-**Steg 3 – Klassificering**
-
-- Om högst en tredjedel av alla möjliga GuessParts är korrekta klassificeras Rounden som **Svår**.
-- Om minst två tredjedelar är korrekta klassificeras Rounden som **Lätt**.
-- I övriga fall klassificeras Rounden som **Medel**.
-
-Gränsvärden tillhör ytterkategorierna:
-- exakt en tredjedel → Svår
-- exakt två tredjedelar → Lätt
-
-Om endast en Player deltar i Guess:
-- 0 eller 1 korrekt GuessPart → Svår
-- 2 eller 3 korrekta GuessParts → Lätt
-- Medel används inte i detta fall
-
-**Tilldelning**
+Svårighetsgrad bestäms enligt tabell i `06-guess-and-prediction`.
 
 Om Oracles Prediction överensstämmer med den fastställda svårighetsgraden tilldelas ett Oracle Card.
 
@@ -211,36 +193,27 @@ Om Oracles Prediction överensstämmer med den fastställda svårighetsgraden ti
 
 Endast kvarvarande Players kan tilldelas Card.
 
-En Player kan få högst 1 Card per Round.
-
 Tilldelning sker vid `REVEALED`.
 
 För varje kvarvarande Player (ej Oracle):
-
-- Om Timeline är korrekt → Timeline Card.
-- Annars, om Title och Artist är korrekt → Timeline Card.
-
-Om Timeline, Title och Artist är korrekt i samma Round markeras Timeline Card med ⭐.
+- Om Placement är korrekt → ett Song Card som placeras i Playerns tidslinje.
 
 För Oracle:
+- Om Prediction är korrekt → ett Oracle Card.
 
-- Om Prediction är korrekt → Oracle Card.
+Song Card representerar den Song som tillhör den Performance som var aktiv vid LOCKED.
+Song Cards placeras i tidslinjen och avgör vem som vinner spelet.
 
-Oracle Card:
-
-- räknas (precis som alla typer av Card) i total Card count
-- kan aldrig ha ⭐
-- påverkar inte timeline
+Oracle Cards placeras inte i tidslinjen och används endast som tie-break enligt `02-game`.
 
 # NORMATIVT: Tilldelning av Jokrar
 
 Joker tilldelas endast vid `REVEALED`.
 
 En kvarvarande Player (ej Oracle) tilldelas 1 Joker om:
+- både Title Guess och Artist Guess är korrekta.
 
-- Timeline är korrekt
-- Title är korrekt
-- Artist är korrekt
+Joker tilldelas oberoende av om Placement var korrekt.
 
 En Player kan vinna högst 1 Joker per Round.
 

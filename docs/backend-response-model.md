@@ -2,18 +2,18 @@
 
 # Syfte
 
-Detta dokument beskriver hur backend skickar spelets tillstånd till en Player.
+Detta dokument beskriver hur backend exponerar spelets tillstånd till en enskild Player.
 
 Backend skickar alltid två delar:
 
 - **Snapshot** – gemensamt och identiskt för alla Players
 - **ViewerContext** – privat information för den mottagande Playern
 
-Dokumentet definierar principer och informationsgränser.
+Dokumentet definierar informationsgränser.
 Det låser inte exakt API-form.
 
-Syftet är att säkerställa att privat information (alternativval, Joker-användning, Prediction m.m.)
-inte exponeras publikt före reveal.
+Syftet är att säkerställa att privat information (Guess, Joker-användning, Prediction, facit)
+inte exponeras publikt före `REVEALED`.
 
 # NORMATIVT: Snapshot
 
@@ -21,7 +21,7 @@ Snapshot representerar spelets gemensamma, objektiva tillstånd.
 
 Snapshot innehåller endast information som är sann och synlig för alla Players vid samma tidpunkt.
 
-### Innehåll
+## Innehåll
 
 Snapshot kan innehålla:
 
@@ -30,11 +30,11 @@ Snapshot kan innehålla:
 - aktuell Cycle och dess CycleState
 - aktuell Round och dess RoundState
 - Oracle för Rounden
-- aktiv Performance (utan facit före reveal)
-- publik submit-status per Player (t.ex. vilka GuessParts som är inskickade)
-- Cards (Start Card, Timeline Card, Oracle Card)
+- aktiv Performance (utan facit före `REVEALED`)
+- publik submit-status per Player (t.ex. om Guess är inskickad)
+- Song Cards (inkl. Start Cards) i respektive tidslinje
+- Oracle Cards
 - publikt Joker-saldo per Player
-- ⭐-markeringar på Cards
 - fastställd svårighetsgrad (endast i `REVEALED`)
 - facit (endast i `REVEALED`)
 
@@ -43,24 +43,34 @@ Snapshot är identisk för alla Players.
 Under `GUESSING` är publikt Joker-saldo stabilt.
 Registrerad Joker-användning påverkar inte saldot förrän Round övergår till `REVEALED`.
 
-### Players i Snapshot
+## Player-lista
 
-Snapshot innehåller den aktuella Player-listan för Game.
+Snapshot visar endast kvarvarande Players.
+När en Player upphör att vara kvarvarande ingår varken Playern eller dess
+publika artefakter (t.ex. tidslinje, Cards, Joker-saldo) i Snapshot.
 
-Player-listan kan endast ändras i:
-- `GameState = LOBBY`
-- `GameState = IN_PROGRESS` när aktuell Cycle är i `BOUNDARY_DECISION`
+Snapshot representerar alltid spelets nuvarande tillstånd.
+Den är inte en historikvy.
 
-Under en aktiv Round (t.ex. `READY`, `GUESSING`, `LOCKED`, `REVEALED`) får Player-listan inte ändras via join.
+# INFORMATIVT: Historik
 
-### Förbjudet innehåll
+Snapshot är inte avsedd att visa historik över borttagna Players.
 
-Snapshot får aldrig innehålla:
+Om systemet erbjuder en separat historikvy kan den inkludera
+Players som tidigare deltagit i Game, även om de inte längre är kvarvarande.
+En sådan historik är inte en del av Snapshot och påverkar inte spelets regler.
+
+# NORMATIVT: Förbjudet innehåll i Snapshot
+
+Före `REVEALED` får Snapshot aldrig innehålla:
 
 - privata Guess-val
 - privata Joker-registreringar
-- Oracle Prediction före reveal
-- korrekt svar före reveal
+- Oracle Prediction
+- korrekt year
+- korrekt title
+- korrekt artist
+- något som indirekt avslöjar facit
 
 # NORMATIVT: ViewerContext
 
@@ -71,70 +81,80 @@ ViewerContext beräknas från:
 - Snapshot
 - mottagarens identitet
 
-ViewerContext kan innehålla:
+ViewerContext får aldrig motsäga Snapshot.
 
-### Roller
+## Roller
+
+ViewerContext kan ange:
 
 - om mottagaren är Host
 - om mottagaren är Oracle i aktuell Round
+- om mottagaren är gissande Player
 
-Om mottagaren har anslutit under `BOUNDARY_DECISION` ska ViewerContext kunna
-ange att mottagaren ännu inte ingår i Oracle-rotation förrän nästa Cycle startar.
-Detta är härledd information och får inte påverka Snapshot.
+## Guess (privat under `GUESSING`)
 
-### Guess-progress (endast i `GUESSING`)
+ViewerContext kan innehålla:
 
-- mottagarens egna redan inskickade GuessParts
-- vilken GuessPart mottagaren ska skicka in härnäst
+- mottagarens egna Placement
+- mottagarens Title Guess
+- mottagarens Artist Guess
+- om Guess är fullständig
+- om Guess kan ändras (dvs RoundState = `GUESSING`)
 
-Om mottagaren inte deltar i Guess (t.ex. är Oracle i aktuell Round)
-ska ViewerContext inte ange någon nästa GuessPart.
+Andra Players Guess exponeras aldrig före `REVEALED`.
 
-### Joker (privat under `GUESSING`)
+## Svarsalternativ
 
-- antal registrerade Jokrar för aktiv Performance
-- per GuessPart: om Joker är registrerad
-- återstående tillgängliga Jokrar (publikt saldo minus registrerade)
+Under `GUESSING` ska ViewerContext innehålla:
 
-### Kandidater och hints (endast i `GUESSING`)
+- exakt 10 Title-alternativ
+- exakt 10 Artist-alternativ
 
-- Title/Artist:
-  - CandidateSet.full (utan registrerad Joker)
-  - CandidateSet.reduced (med registrerad Joker)
-- Timeline:
-  - korrekt decenniumintervall om Joker är registrerad
+Dessa alternativ:
 
-### Oracle-specifikt (endast för Oracle)
+- är identiska i innehåll och ordning för alla Players i Rounden
+- är fasta under hela Rounden
 
-- facit (year, title, artist) i `GUESSING`
-- Oracle Prediction (egen inskickad)
-- möjlighet att låsa Round (om Prediction finns)
+ViewerContext innehåller endast alternativen, inte korrekthetsmarkering.
 
-ViewerContext får aldrig motsäga Snapshot.
+## Joker (privat under `GUESSING`)
 
-# NORMATIVT: Informationsregler före reveal
+ViewerContext kan innehålla:
 
-Före `REVEALED` gäller:
+- antal registrerade Jokrar
+  för aktiv Performance (max 1)
+- om Joker är registrerad för Placement
+- korrekt decenniumintervall
+  om Joker är registrerad
 
-- Backend får inte exponera korrekt svar i Snapshot.
-- Backend får inte exponera andra Players Guess.
-- Backend får inte exponera Oracle Prediction i Snapshot.
-- Backend får inte exponera information som indirekt avslöjar facit.
+Publikt Joker-saldo hämtas från Snapshot.
 
-Privat Joker-hjälp får skickas endast till den Player som har registrerat Joker.
+Registrerad Joker påverkar inte publikt saldo förrän `REVEALED`.
+
+## Oracle-specifikt (endast för Oracle)
+
+Under `GUESSING` innehåller ViewerContext för Oracle:
+
+- facit (year, title, artist)
+- egen Prediction
+- om Round kan låsas (Prediction finns)
+
+Oracle ser alla Players tidslinjer och publika Joker-saldon i Snapshot.
 
 # NORMATIVT: Reveal
 
-När Round övergår till `REVEALED`:
+När Round går från `GUESSING` till `LOCKED` fastställs utfallet.
+När Round sedan övergår till `REVEALED` ska Snapshot visa det fastställda utfallet.
 
 Snapshot ska visa:
 
 - korrekt year
 - korrekt title
 - korrekt artist
-- bedömning av alla GuessParts
-- tilldelade Cards
-- ⭐-markeringar
+- bedömning av varje Players Placement
+- bedömning av Title Guess och Artist Guess
+- tilldelade Song Cards
+- tilldelade Oracle Cards
 - uppdaterade publika Joker-saldon
 - fastställd svårighetsgrad
 - Oracle Prediction
@@ -142,11 +162,23 @@ Snapshot ska visa:
 
 All bedömning är då publik och definitiv.
 
+# NORMATIVT: Handoff efter REVEALED
+
+När Round är i `REVEALED`:
+
+- Normalt triggar Oracle övergång till nästa Round eller `BOUNDARY_DECISION`.
+- Om Oracle inte längre är kvarvarande ska backend automatiskt fortsätta enligt `03-cycle`.
+
+Detta påverkar inte Snapshotens innehåll.
+Tillåtna actions definieras av RoundState och CycleState.
+
 # NORMATIVT: Relation till Performance-byte
 
 Om Performance ersätts under `GUESSING`:
 
-- tidigare privata Guess och Joker-registreringar upphör att gälla
+- tidigare privata Guess upphör att gälla
+- tidigare Joker-registreringar annulleras
+- tidigare Prediction ogiltigförklaras
 - ny ViewerContext ska genereras
 - Snapshot ska endast spegla den nya aktiva Performancen
 

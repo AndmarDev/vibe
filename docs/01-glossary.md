@@ -6,7 +6,7 @@ Detta dokument definierar begreppen i ett socialt musikspel
 där deltagare turas om att spela musik och gissa.
 
 Begrepp som definieras här är normativa.
-Regler och tillståndsövergångar definieras i dokument 02–08.
+Regler och tillståndsövergångar definieras i dokument 02–07.
 
 # NORMATIVT: Game Model
 
@@ -27,23 +27,22 @@ En strukturell enhet inom ett Game där varje Player är Oracle en gång.
 
 **Egenskaper:**
 - Cycle består av Rounds.
-- Varje Player är Oracle exakt en gång per Cycle.
+- I en avslutad Cycle har Players varit Oracle varsin gång.
 - Oracle-rotation är deterministisk.
 - Cycle är struktur, inte spelhändelse.
 
 ## Round
 
 **Definition:**
-En spelhändelse inom ett Game där en låt spelas,
-Players lämnar Guesses och resultat fastställs.
+En spelhändelse inom ett Game där en Song spelas, Players lämnar Guesses,
+Oracle ger Prediction och resultat fastställs.
 
 **Egenskaper:**
 - Round har en Oracle.
 - Oracle leder rundans flöde.
-- Round har en state machine (definieras i `04-round`).
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Round fastställer tilldelning av Cards och Jokrar (definieras i `04-round` och `07-joker`).
+- Round fastställer tilldelning av Cards och Jokrar (regler definieras i 04-round och 07-joker).
 
 ## Performance
 
@@ -69,7 +68,8 @@ En deltagare i ett Game.
 
 **Kvarvarande Player:**
 En Player som vid den aktuella tidpunkten ingår i Game.
-En Player som har tagits bort från Game är inte kvarvarande.
+
+En Player som har tagits bort från Game upphör att vara kvarvarande från och med borttagningstidpunkten.
 
 ## Host
 
@@ -79,8 +79,9 @@ Den Player som ansvarar för Game under hela dess livscykel.
 **Egenskaper:**
 - Host skapar Game och är första Player att ansluta.
 - Det finns exakt en Host per Game.
-- Host kan starta och avsluta Game.
+- Host bjuder in Players.
 - Host kan ta bort Players.
+- Host startar och avslutar Game.
 - Host ansvarar för ljuduppspelning.
 - Host deltar i övrigt som vanlig Player.
 
@@ -91,9 +92,8 @@ Den Player som leder en specifik Round och som har facit.
 
 **Egenskaper:**
 - Varje Round har exakt en Oracle.
-- Oracle leder Roundens transitions (start, lås, lås upp, reveal).
-- Oracle får facit (year, title, artist) när Round övergår till `GUESSING`.
-- Oracle gör Prediction istället för Guess och använder därför inga Jokrar.
+- Oracle leder rundans flöde.
+- Oracle gör Prediction istället för Guess.
 - Oracle kan tilldelas ett Oracle Card enligt regler för Prediction.
 
 ## Prediction
@@ -103,8 +103,6 @@ Oracles bedömning av svårighetsgrad (Lätt, Medel eller Svår) för aktiv Perf
 
 **Egenskaper:**
 - Varje aktiv Performance kan ha högst en Prediction.
-- Prediction är knuten till aktiv Performance.
-- Oracle kan ändra Prediction under gissningsfasen och den blir definitiv när Round låses.
 - Prediction bedöms vid reveal.
 - Korrekt Prediction genererar ett Oracle Card.
 
@@ -116,34 +114,42 @@ En Players samlade svar för en Performance.
 **Egenskaper:**
 - En Player har högst en Guess per Performance.
 - Guess gäller alltid aktiv Performance.
-- Guess består av GuessParts.
+- Guess består av:
+  - Placement
+  - Title Guess
+  - Artist Guess
 - Guess bedöms vid reveal.
 
-## GuessPart
+## Placement
 
 **Definition:**
-En separat bedömd del av en Guess.
-
-**Typer:**
-1. Timeline
-2. Title
-3. Artist
+En Players försök att placera Song i sin tidslinje.
 
 **Egenskaper:**
-- GuessParts skickas in sekventiellt.
-- GuessParts bedöms separat.
+- Placement är en Players försök att placera Song i sin tidslinje.
+- Exakta regler för korrekthet definieras i `04-round`.
 
-## CandidateSet
+## Title Guess
 
 **Definition:**
-De svarsalternativ som spelet kan visa för GuessParts `Title` och `Artist` i en viss Performance.
+En Players val av title-alternativ för aktiv Performance.
 
 **Egenskaper:**
-- Skapas per aktiv Performance och GuessPart.
-- Är gemensamt för alla Players i samma Round.
-- Består av två nivåer: `full` och `reduced`.
-- `reduced` är alltid en delmängd av `full`.
-- Joker avgör vilken nivå som visas (regler i `07-joker`, format och krav i `08-candidates`).
+- Tillhör exakt en Player.
+- Tillhör exakt en Performance.
+- Bedöms vid reveal.
+
+## Artist Guess
+
+**Definition:**
+En Players val av artist-alternativ för aktiv Performance.
+
+**Egenskaper:**
+- Tillhör exakt en Player.
+- Tillhör exakt en Performance.
+- Bedöms vid reveal.
+
+# NORMATIVT: Cards & Resources
 
 ## Card
 
@@ -152,7 +158,7 @@ Ett persistent objekt som tillhör en Player i ett Game och som tilldelas enligt
 
 Card är en kategori som inkluderar:
 - Start Card
-- Timeline Card
+- Song Card
 - Oracle Card
 
 ## Start Card
@@ -164,16 +170,18 @@ Ett Card som skapas vid Game-start och etablerar Playerns initiala timeline-posi
 - Innehåller endast year.
 - Har ingen Song.
 - Placeras i Playerns timeline.
+- Påverkar framtida Placement.
 
-## Timeline Card
+## Song Card
 
 **Definition:**
-Ett Card som representerar rundans Song och placeras i Playerns timeline.
+Ett Card som representerar en Song som en Player placerat korrekt i sin tidslinje.
 
 **Egenskaper:**
 - Innehåller Song och year.
 - Placeras i Playerns timeline.
-- Påverkar framtida timeline-guessing.
+- Påverkar framtida Placement.
+- Räknas i slutresultatet.
 
 ## Oracle Card
 
@@ -182,19 +190,20 @@ Ett Card som representerar rundans Song och tilldelas Oracle vid korrekt Predict
 
 **Egenskaper:**
 - Innehåller Song och year.
-- Räknas (precis som alla typer av Card) i total Card count.
-- Påverkar inte framtida timeline-guessing.
+- Placeras inte i Playerns timeline.
+- Räknas inte i antalet kort i tidslinjen när vinnare koras.
+- Används endast som utslagsgivare vid lika många kort i tidslinjen.
 
 ## Joker
 
 **Definition:**
-En resurs som en Player kan använda under `GUESSING` för att förenkla en GuessPart.
+En resurs som en Player kan använda för att förenkla Placement i en Round.
 
 **Egenskaper:**
 - Tillhör en Player inom ett Game.
 - Joker påverkar aldrig korrekt svar eller bedömning.
-- Joker kan användas på `Timeline`, `Title` och `Artist`.
-- Exakta regler för begränsningar, effekt, intjäning och saldo definieras i `07-joker`.
+- Joker kan endast användas på Placement.
+- Exakta regler för begränsningar, effekt, intjäning och saldo definieras i 07-joker.
 
 # NORMATIVT: Music Model
 
@@ -234,4 +243,4 @@ En kuraterad samling av Songs.
 - En Round kan ha högst en aktiv Performance åt gången.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokrar genereras genom Round.
-- Oracle Prediction gäller alltid aktiv Performance.
+- Prediction gäller alltid aktiv Performance.
