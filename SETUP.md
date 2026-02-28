@@ -74,18 +74,18 @@ Installera tsx i roten (för att köra TypeScript direkt, exempelvis iTunes-scri
 pnpm add -D tsx --workspace-root
 ```
 
-# libs/rules
+# libs/model, libs/rules
 
-Skapa `libs/rules` som kommer att användas av backend (`pnpm init` skapar `libs/rules/package.json`)
+Skapa `libs/x` (`pnpm init` skapar `libs/x/package.json`)
 ```
-mkdir -p libs/rules
-cd libs/rules
+mkdir -p libs/x
+cd libs/x
 pnpm init
 ```
 
-Uppdatera `libs/rules/package.json` för att:
-- Konfigurera `@app/rules` som ESM-paket
+Uppdatera `libs/x/package.json` för att
+- Konfigurera `@app/x` som ESM-paket
 - Definiera dist som export (konsumeras av andra paket)
 
-Skapa `libs/rules/tsconfig.json` för att
-- Konfigurera `libs/rules` för TypeScript (NodeNext / ESM)
+Skapa `libs/x/tsconfig.json` för att
+- Konfigurera `libs/x` för TypeScript (NodeNext / ESM)
