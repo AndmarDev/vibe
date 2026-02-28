@@ -197,6 +197,8 @@ Tilldelning sker vid `REVEALED`.
 
 För varje kvarvarande Player (ej Oracle):
 - Om Placement är korrekt → ett Song Card som placeras i Playerns tidslinje.
+- Om samma Player även har korrekt Title Guess och korrekt Artist Guess
+  ska Song Card markeras med en Star (⭐).
 
 För Oracle:
 - Om Prediction är korrekt → ett Oracle Card.
