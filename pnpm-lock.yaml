@@ -17,7 +17,11 @@ importers:
 
   libs/model: {}
 
-  libs/rules: {}
+  libs/rules:
+    dependencies:
+      '@app/model':
+        specifier: workspace:*
+        version: link:../model
 
 packages:
 
