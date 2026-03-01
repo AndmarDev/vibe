@@ -89,3 +89,10 @@ Uppdatera `libs/x/package.json` för att
 
 Skapa `libs/x/tsconfig.json` för att
 - Konfigurera `libs/x` för TypeScript (NodeNext / ESM)
+
+# Paketberoenden
+
+`rules` → `model`
+```
+pnpm add @app/model@workspace:* --filter @app/rules
+```
