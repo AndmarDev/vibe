@@ -2,7 +2,12 @@
   "name": "vibe",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prune": "pnpm store prune",
+    "clean:all": "pnpm -r run clean && rm -rf node_modules",
+    "build:all": "pnpm -r run build",
+    "build:cleanup": "pnpm -r run build:cleanup",
+    "typecheck:all": "pnpm -r run typecheck",
+    "cbuild": "pnpm -r run build:cleanup && pnpm run build:all"
   },
   "packageManager": "pnpm@10.26.2",
   "devDependencies": {
