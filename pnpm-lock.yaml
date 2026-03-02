@@ -20,6 +20,9 @@ importers:
       '@app/model':
         specifier: workspace:*
         version: link:../../libs/model
+      '@app/rules':
+        specifier: workspace:*
+        version: link:../../libs/rules
     devDependencies:
       vitest:
         specifier: ^4.0.18
