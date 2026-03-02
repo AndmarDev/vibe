@@ -1,13 +1,8 @@
 {
-  "name": "vibe",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "@app/test-hub",
+  "private": true,
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.26.2"
+  }
 }
