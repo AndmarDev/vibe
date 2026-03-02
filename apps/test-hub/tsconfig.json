@@ -1,0 +1,8 @@
+// apps/test-hub/tsconfig.json
+{
+  "extends": "../../tsconfig.node-lib.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}
