@@ -16,6 +16,10 @@ importers:
         version: 5.9.3
 
   apps/test-hub:
+    dependencies:
+      '@app/model':
+        specifier: workspace:*
+        version: link:../../libs/model
     devDependencies:
       vitest:
         specifier: ^4.0.18

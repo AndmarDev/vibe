@@ -93,3 +93,6 @@ Gemensamt för alla paket
 
 `rules` → `model`
 - > $ pnpm add @app/model@workspace:* --filter @app/rules
+
+`test-hub` → `model`
+- > $ pnpm add @app/model@workspace:* --filter @app/test-hub
