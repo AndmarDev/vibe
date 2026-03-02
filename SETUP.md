@@ -74,13 +74,20 @@ Installera tsx i roten (för att köra TypeScript direkt, exempelvis iTunes-scri
 pnpm add -D tsx --workspace-root
 ```
 
-# libs/model, libs/rules, apps/test-hub
+# libs, apps
+
+Gemensamt för alla paket
 
 - Skapa `libs/x/package.json`
   - > $ mkdir -p libs/x
   - > $ pnpm init --dir libs/x
 - Uppdatera `libs/x/package.json`
 - Skapa `libs/x/tsconfig.json`
+
+# apps/test-hub
+
+- Lägg till Vitest i `@app/test-hub`
+  - > $ pnpm add -D vitest --filter @app/test-hub
 
 # Paketberoenden
 
