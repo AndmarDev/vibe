@@ -3,11 +3,13 @@
   "private": true,
   "scripts": {
     "prune": "pnpm store prune",
-    "clean:all": "pnpm -r run clean && rm -rf node_modules",
-    "build:all": "pnpm -r run build",
+    "clean": "pnpm -r run clean && rm -rf node_modules",
+    "build": "pnpm -r run build",
     "build:cleanup": "pnpm -r run build:cleanup",
-    "typecheck:all": "pnpm -r run typecheck",
-    "cbuild": "pnpm -r run build:cleanup && pnpm run build:all"
+    "typecheck": "pnpm -r run typecheck",
+    "cbuild": "pnpm -r run build:cleanup && pnpm run build:all",
+    "test": "pnpm --filter @app/test-hub test",
+    "test:watch": "pnpm --filter @app/test-hub test:watch"
   },
   "packageManager": "pnpm@10.26.2",
   "devDependencies": {
