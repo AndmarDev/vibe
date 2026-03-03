@@ -10,6 +10,8 @@ import type {
   PlayerId,
   RoundId,
   Result,
+  PerformanceId,
+  ActivePerformance,
 } from '@app/model';
 import type { Command } from '@app/model';
 import { ok, err, badRequest, conflict, forbidden } from '@app/model';
@@ -112,12 +114,16 @@ function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnaps
   // Vi återanvänder samma logik genom att köra den via "lokala variabler" och skriva tillbaka.
   let round1 = s0.activeRound;
   let cycle1 = s0.activeCycle;
+  let perf1 = s0.activePerformance;
+
+  let shouldClearRoundAndPerf = false;
 
   if (s0.state === 'IN_PROGRESS' && cycle1) {
     // Oracle-remove under pågående round => abort + clear
     if (round1 && round1.state !== 'REVEALED' && round1.state !== 'ABORTED') {
       if (round1.oraclePlayerId === removeId) {
-        round1 = null;
+        // Flagga att vi behöver cleara round och performance
+        shouldClearRoundAndPerf = true;
       }
     }
 
@@ -147,7 +153,13 @@ function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnaps
     }
   }
 
-  return ok({ ...s0, players: players1, activeRound: round1, activeCycle: cycle1 });
+  // Kolla flaggan om vi behöver cleara round och performance
+  if (shouldClearRoundAndPerf) {
+    round1 = null;
+    perf1 = null;
+  }
+
+  return ok({ ...s0, players: players1, activeRound: round1, activePerformance: perf1, activeCycle: cycle1 });
 }
 
 // "Ren" domänlogik: inga state-guards (IN_PROGRESS/CYCLE_ACTIVE), ingen bump.
@@ -188,21 +200,22 @@ function applyRoundCreate(s0: GameSnapshot, roundId: RoundId): Result<GameSnapsh
   return createRoundInActiveCycle(s, cycle, roundId);
 }
 
-function applyRoundAbort(s0: GameSnapshot): GameSnapshot {
-  // Om ingen aktiv round finns, gör inget.
-  if (s0.activeRound === null) return s0; // samma referens => caller kan undvika bump
-  return { ...s0, activeRound: null };
+function clearRoundAndPerformance(s0: GameSnapshot): GameSnapshot {
+  // Invariant-hygien: om rounden försvinner ska performance också försvinna.
+  if (s0.activeRound === null && s0.activePerformance === null) return s0; // idempotent, behåll referens
+  return { ...s0, activeRound: null, activePerformance: null };
 }
 
 // Helper: ingen bump här. Caller ansvarar för exakt en bump.
 function finishGameIfNotFinished(s0: GameSnapshot): GameSnapshot {
   if (s0.state === 'FINISHED') return s0;
 
-  // Policy: FINISHED lämnar ingen hängande round i snapshot.
+  // Policy: FINISHED lämnar inget "hängande" i snapshot.
+  const cleared = clearRoundAndPerformance(s0);
+
   return {
-    ...s0,
+    ...cleared,
     state: 'FINISHED',
-    activeRound: null,
   };
 }
 
@@ -252,6 +265,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
         players: [],
         activeCycle: null,
         activeRound: null,
+        activePerformance: null,
       };
       return ok({ snapshot: s, effects: [] });
     }
@@ -412,9 +426,10 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
         rotationIndex: 0,
       };
 
+      const cleared = clearRoundAndPerformance(s0);
+
       const s1: GameSnapshot = {
-        ...s0,
-        activeRound: null,
+        ...cleared,
         activeCycle: next,
       };
 
@@ -534,9 +549,10 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const finishedRotation = cycle1.rotationIndex >= cycle1.rotation.length;
       const cycle2: ActiveCycle = finishedRotation ? { ...cycle1, state: 'BOUNDARY_DECISION' } : cycle1;
 
+      const cleared = clearRoundAndPerformance(s0);
+
       const s1: GameSnapshot = {
-        ...s0,
-        activeRound: null,
+        ...cleared,
         activeCycle: cycle2,
       };
 
@@ -552,7 +568,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      const s1 = applyRoundAbort(s0);
+      const s1 = clearRoundAndPerformance(s0);
 
       // idempotent: om inget ändrades, bumpa inte
       if (s1 === s0) return ok({ snapshot: s0, effects: [] });
@@ -571,12 +587,34 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const hr = requireHostActor(actor, s0);
       if (!hr.ok) return hr;
 
-      const s1 = applyRoundAbort(s0);
+      const s1 = clearRoundAndPerformance(s0);
 
       // idempotent: om inget ändrades, bumpa inte
       if (s1 === s0) return ok({ snapshot: s0, effects: [] });
 
       return ok({ snapshot: bump(s1), effects: [] });
+    }
+
+    case 'PERFORMANCE_SET_SYSTEM': {
+      if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
+
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const gp = requireGameInProgress(s0r.value);
+      if (!gp.ok) return gp;
+      const s0 = gp.value;
+
+      const r0 = s0.activeRound;
+      if (r0 === null) return err(conflict('ROUND_REQUIRED'));
+      if (r0.state !== 'READY') return err(conflict('ROUND_NOT_IN_READY'));
+
+      const perf: ActivePerformance = {
+        performanceId: c.performanceId,
+        trackRef: c.trackRef,
+      };
+
+      return ok({ snapshot: bump({ ...s0, activePerformance: perf }), effects: [] });
     }
 
     default: {

@@ -4,6 +4,7 @@ export type GameId = number;
 export type PlayerId = number;
 export type RoundId = number;
 export type CycleId = number;
+export type PerformanceId = number;
 
 export type GameState = 'LOBBY' | 'IN_PROGRESS' | 'FINISHED';
 export type RoundState = 'READY' | 'GUESSING' | 'LOCKED' | 'REVEALED' | 'ABORTED';
@@ -38,14 +39,19 @@ export type ActiveRound = {
   prediction: Difficulty | null;
 };
 
+export type ActivePerformance = {
+  performanceId: PerformanceId;
+  trackRef?: string; // opaque ref, ingen semantik i rules ännu
+};
+
 export type GameSnapshot = {
   gameId: GameId;
   gameSeq: number;
   state: GameState;
 
-  // Endast kvarvarande Players.
-  players: Player[];
+  players: Player[]; // endast kvarvarande Players
 
   activeCycle: ActiveCycle | null;
   activeRound: ActiveRound | null;
+  activePerformance: ActivePerformance | null;
 };

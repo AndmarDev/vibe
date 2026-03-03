@@ -667,3 +667,147 @@ describe('host triggers round abort', () => {
     }
   });
 });
+
+describe('performance (system-driven, minimal)', () => {
+  it('can set performance when round is READY', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+
+    expect(s.activeRound?.state).toBe('READY');
+    expect(s.activePerformance).toBe(null);
+
+    const withPerf = unwrap(
+      apply({
+        snapshot: s,
+        actor: system,
+        command: { type: 'PERFORMANCE_SET_SYSTEM', performanceId: 101, trackRef: 'track:abc' },
+      }),
+    ).snapshot;
+
+    expect(withPerf.activePerformance?.performanceId).toBe(101);
+    expect(withPerf.activePerformance?.trackRef).toBe('track:abc');
+  });
+
+  it('cannot set performance without activeRound (409 ROUND_REQUIRED)', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    const s = startAndCreateCycle(lobby, 1);
+    expect(s.activeRound).toBe(null);
+
+    const r = apply({
+      snapshot: s,
+      actor: system,
+      command: { type: 'PERFORMANCE_SET_SYSTEM', performanceId: 1, trackRef: 'x' },
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(409);
+      expect(r.error.code).toBe('CONFLICT');
+      expect(r.error.reason).toBe('ROUND_REQUIRED');
+    }
+  });
+
+  it('ROUND_REVEAL clears activePerformance', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+
+    // create round (READY) + set performance
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+    s = unwrap(
+      apply({
+        snapshot: s,
+        actor: system,
+        command: { type: 'PERFORMANCE_SET_SYSTEM', performanceId: 1, trackRef: 't' },
+      }),
+    ).snapshot;
+
+    // play to LOCKED then reveal
+    s = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_BEGIN' } })).snapshot;
+    s = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_SET_PREDICTION', difficulty: 'EASY' } })).snapshot;
+    s = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_LOCK' } })).snapshot;
+
+    const revealed = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_REVEAL' } })).snapshot;
+
+    expect(revealed.activeRound).toBe(null);
+    expect(revealed.activePerformance).toBe(null);
+  });
+
+  it('ROUND_ABORT clears activePerformance', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+
+    s = unwrap(
+      apply({
+        snapshot: s,
+        actor: system,
+        command: { type: 'PERFORMANCE_SET_SYSTEM', performanceId: 9, trackRef: 't9' },
+      }),
+    ).snapshot;
+
+    const aborted = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_ABORT' } })).snapshot;
+
+    expect(aborted.activeRound).toBe(null);
+    expect(aborted.activePerformance).toBe(null);
+  });
+
+  it('PLAYER_REMOVE_SYSTEM (oracle removed during active round) clears activePerformance', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+
+    // host plays round 1 => rotationIndex=1 (next oracle=2)
+    s = playRound(s, 1, host10, 'EASY');
+
+    // create round 2 (oracle=2) and begin (GUESSING)
+    const p2: Actor = { kind: 'PLAYER', playerId: 2 };
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 2 } })).snapshot;
+
+    // set performance while READY
+    s = unwrap(
+      apply({
+        snapshot: s,
+        actor: system,
+        command: { type: 'PERFORMANCE_SET_SYSTEM', performanceId: 22, trackRef: 't22' },
+      }),
+    ).snapshot;
+
+    s = unwrap(apply({ snapshot: s, actor: p2, command: { type: 'ROUND_BEGIN' } })).snapshot;
+    expect(s.activeRound?.state).toBe('GUESSING');
+    expect(s.activePerformance?.performanceId).toBe(22);
+
+    // remove oracle=2 during GUESSING => round cleared => performance must be cleared
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 2 } }),
+    ).snapshot;
+
+    expect(removed.activeRound).toBe(null);
+    expect(removed.activePerformance).toBe(null);
+  });
+});

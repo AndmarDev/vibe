@@ -1,6 +1,6 @@
 // libs/model/src/commands.ts
 
-import type { CycleId, Difficulty, GameId, PlayerId, RoundId } from './domain.js';
+import type { CycleId, Difficulty, GameId, PlayerId, RoundId, PerformanceId } from './domain.js';
 
 export type Command =
   | { type: 'GAME_CREATE'; gameId: GameId }
@@ -24,4 +24,6 @@ export type Command =
   | { type: 'ROUND_LOCK' }
   | { type: 'ROUND_REVEAL' }
   | { type: 'ROUND_ABORT_SYSTEM' } // internal only
-  | { type: 'ROUND_ABORT' };
+  | { type: 'ROUND_ABORT' }
+
+  | { type: 'PERFORMANCE_SET_SYSTEM'; performanceId: PerformanceId; trackRef?: string }; // internal only
