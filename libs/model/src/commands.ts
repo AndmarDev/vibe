@@ -1,6 +1,6 @@
 // libs/model/src/commands.ts
 
-import type { Difficulty, GameId, PlayerId, RoundId } from './domain.js';
+import type { CycleId, Difficulty, GameId, PlayerId, RoundId } from './domain.js';
 
 export type Command =
   | { type: 'GAME_CREATE'; gameId: GameId }
@@ -10,7 +10,11 @@ export type Command =
   | { type: 'PLAYER_ADD_SYSTEM'; playerId: PlayerId; isHost: boolean }
   | { type: 'PLAYER_REMOVE_SYSTEM'; playerId: PlayerId }
 
-  | { type: 'ROUND_CREATE_SYSTEM'; roundId: RoundId; oraclePlayerId: PlayerId }
+  | { type: 'CYCLE_CREATE_SYSTEM'; cycleId: CycleId }
+  | { type: 'CYCLE_DECIDE'; decision: 'START_NEXT'; nextCycleId: CycleId }
+  | { type: 'CYCLE_DECIDE'; decision: 'FINISH_GAME' }
+
+  | { type: 'ROUND_CREATE_SYSTEM'; roundId: RoundId } // oracle hämtas från rotation
   | { type: 'ROUND_BEGIN' }
   | { type: 'ROUND_SET_PREDICTION'; difficulty: Difficulty }
   | { type: 'ROUND_LOCK' }

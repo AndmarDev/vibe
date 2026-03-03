@@ -3,6 +3,7 @@
 export type GameId = number;
 export type PlayerId = number;
 export type RoundId = number;
+export type CycleId = number;
 
 export type GameState = 'LOBBY' | 'IN_PROGRESS' | 'FINISHED';
 export type RoundState = 'READY' | 'GUESSING' | 'LOCKED' | 'REVEALED' | 'ABORTED';
@@ -17,6 +18,15 @@ export type Player = {
   playerId: PlayerId;
   isHost: boolean;
   joinIndex: number; // monotont ökande per Game, återanvänds aldrig
+};
+
+export type CycleState = 'ACTIVE' | 'BOUNDARY_DECISION'; // saknas: FINISHED (historik-/arkiveringsbehov)
+
+export type ActiveCycle = {
+  cycleId: CycleId;
+  state: CycleState;
+  rotation: PlayerId[];
+  rotationIndex: number; // 0..rotation.length
 };
 
 export type ActiveRound = {
@@ -36,5 +46,6 @@ export type GameSnapshot = {
   // Endast kvarvarande Players.
   players: Player[];
 
+  activeCycle: ActiveCycle | null;
   activeRound: ActiveRound | null;
 };

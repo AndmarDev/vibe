@@ -1,6 +1,15 @@
 // libs/rules/src/apply.ts
 
-import type { Actor, ActiveRound, GameSnapshot, KnownError, Player, Result } from '@app/model';
+import type {
+  Actor,
+  ActiveCycle,
+  ActiveRound,
+  GameSnapshot,
+  KnownError,
+  Player,
+  PlayerId,
+  Result,
+} from '@app/model';
 import type { Command } from '@app/model';
 import { ok, err, badRequest, conflict, forbidden } from '@app/model';
 
@@ -33,7 +42,6 @@ function requireGameNotFinished(s: GameSnapshot): Result<GameSnapshot, KnownErro
   return ok(s);
 }
 
-// Round-kommandon får bara köras när spelet är IN_PROGRESS
 function requireGameInProgress(s: GameSnapshot): Result<GameSnapshot, KnownError> {
   if (s.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
   if (s.state !== 'IN_PROGRESS') return err(conflict('GAME_NOT_IN_PROGRESS'));
@@ -85,6 +93,38 @@ function finishGameIfNotFinished(s0: GameSnapshot): GameSnapshot {
   };
 }
 
+function requireCycle(s: GameSnapshot): Result<ActiveCycle, KnownError> {
+  const c = s.activeCycle;
+  if (!c) return err(conflict('CYCLE_REQUIRED'));
+  return ok(c);
+}
+
+function requireCycleActive(s: GameSnapshot): Result<ActiveCycle, KnownError> {
+  const cr = requireCycle(s);
+  if (!cr.ok) return cr;
+  if (cr.value.state !== 'ACTIVE') return err(conflict('CYCLE_NOT_IN_ACTIVE'));
+  return cr;
+}
+
+function requireCycleBoundary(s: GameSnapshot): Result<ActiveCycle, KnownError> {
+  const cr = requireCycle(s);
+  if (!cr.ok) return cr;
+  if (cr.value.state !== 'BOUNDARY_DECISION') return err(conflict('CYCLE_NOT_IN_BOUNDARY_DECISION'));
+  return cr;
+}
+
+function computeRotation(players: Player[]): Result<PlayerId[], KnownError> {
+  const host = players.find((p) => p.isHost);
+  if (!host) return err(conflict('HOST_REQUIRED'));
+
+  const others = players
+    .filter((p) => !p.isHost)
+    .slice()
+    .sort((a, b) => a.joinIndex - b.joinIndex);
+
+  return ok([host.playerId, ...others.map((p) => p.playerId)]);
+}
+
 export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
   const { snapshot, actor, command: c } = input;
 
@@ -97,6 +137,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
         gameSeq: 0,
         state: 'LOBBY',
         players: [],
+        activeCycle: null,
         activeRound: null,
       };
       return ok({ snapshot: s, effects: [] });
@@ -111,7 +152,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!nf.ok) return nf;
       const s0 = nf.value;
 
-      // Håll snittet tunt -> vi tillåter add endast i LOBBY.
+      // Add endast i LOBBY, för tillfället.
       if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
 
       for (const p of s0.players) {
@@ -157,7 +198,6 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const players1 = s0.players.filter((p) => p.playerId !== c.playerId);
       let s1: GameSnapshot = { ...s0, players: players1 };
 
-      // minPlayers-gating: om kvarvarande < 3 -> finish (abort round vid behov)
       if (players1.length < 3) {
         s1 = finishGameIfNotFinished(s1);
       }
@@ -193,6 +233,75 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: bump(s1), effects: [] });
     }
 
+    case 'CYCLE_CREATE_SYSTEM': {
+      if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const gp = requireGameInProgress(s0r.value);
+      if (!gp.ok) return gp;
+      const s0 = gp.value;
+
+      if (s0.activeCycle) return err(conflict('CYCLE_ALREADY_EXISTS'));
+      if (s0.players.length < 3) return err(conflict('MIN_PLAYERS_REQUIRED'));
+
+      const rot = computeRotation(s0.players);
+      if (!rot.ok) return rot;
+
+      const cycle: ActiveCycle = {
+        cycleId: c.cycleId,
+        state: 'ACTIVE',
+        rotation: rot.value,
+        rotationIndex: 0,
+      };
+
+      return ok({ snapshot: bump({ ...s0, activeCycle: cycle }), effects: [] });
+    }
+
+    case 'CYCLE_DECIDE': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const gp = requireGameInProgress(s0r.value);
+      if (!gp.ok) return gp;
+      const s0 = gp.value;
+
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
+
+      const cr = requireCycleBoundary(s0);
+      if (!cr.ok) return cr;
+
+      // Policy: boundary-beslut kräver att ingen aktiv round finns kvar.
+      if (s0.activeRound !== null) return err(conflict('ROUND_ALREADY_EXISTS'));
+
+      if (c.decision === 'FINISH_GAME') {
+        const s1 = finishGameIfNotFinished(s0);
+        return ok({ snapshot: bump(s1), effects: [] });
+      }
+
+      // START_NEXT: nolla activeRound och ersätt activeCycle med ny.
+      if (s0.players.length < 3) return err(conflict('MIN_PLAYERS_REQUIRED'));
+
+      const rot = computeRotation(s0.players);
+      if (!rot.ok) return rot;
+
+      const next: ActiveCycle = {
+        cycleId: c.nextCycleId,
+        state: 'ACTIVE',
+        rotation: rot.value,
+        rotationIndex: 0,
+      };
+
+      const s1: GameSnapshot = {
+        ...s0,
+        activeRound: null,
+        activeCycle: next,
+      };
+
+      return ok({ snapshot: bump(s1), effects: [] });
+    }
+
     case 'ROUND_CREATE_SYSTEM': {
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
@@ -202,14 +311,22 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
+      const cr = requireCycleActive(s0);
+      if (!cr.ok) return cr;
+      const cycle = cr.value;
+
       if (s0.activeRound) return err(conflict('ROUND_ALREADY_EXISTS'));
+
+      if (cycle.rotationIndex >= cycle.rotation.length) return err(conflict('ROTATION_EXHAUSTED'));
+
+      const oraclePlayerId = cycle.rotation[cycle.rotationIndex];
 
       const s1: GameSnapshot = {
         ...s0,
         activeRound: {
           roundId: c.roundId,
           state: 'READY',
-          oraclePlayerId: c.oraclePlayerId,
+          oraclePlayerId,
           prediction: null,
         },
       };
@@ -231,7 +348,6 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
 
       if (r.state !== 'READY') return err(conflict('ROUND_NOT_IN_READY'));
 
-      // BEGIN gör endast READY -> GUESSING. Inga resets här.
       return ok({
         snapshot: bump({ ...s0, activeRound: { ...r, state: 'GUESSING' } }),
         effects: [],
@@ -293,10 +409,26 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
 
       if (r.state !== 'LOCKED') return err(conflict('ROUND_NOT_IN_LOCKED'));
 
-      return ok({
-        snapshot: bump({ ...s0, activeRound: { ...r, state: 'REVEALED' } }),
-        effects: [],
-      });
+      // uppdatera cycle index/state samtidigt, one bump.
+      const cr = requireCycle(s0);
+      if (!cr.ok) return cr;
+      const cycle0 = cr.value;
+
+      const cycle1: ActiveCycle = {
+        ...cycle0,
+        rotationIndex: cycle0.rotationIndex + 1,
+      };
+
+      const finishedRotation = cycle1.rotationIndex >= cycle1.rotation.length;
+      const cycle2: ActiveCycle = finishedRotation ? { ...cycle1, state: 'BOUNDARY_DECISION' } : cycle1;
+
+      const s1: GameSnapshot = {
+        ...s0,
+        activeRound: null,
+        activeCycle: cycle2,
+      };
+
+      return ok({ snapshot: bump(s1), effects: [] });
     }
 
     case 'ROUND_ABORT_SYSTEM': {

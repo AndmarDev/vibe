@@ -20,6 +20,13 @@ export type KnownErrorReason =
   | 'HOST_CANNOT_BE_REMOVED'
   | 'HOST_ALREADY_EXISTS'
 
+  // cycle
+  | 'CYCLE_REQUIRED'
+  | 'CYCLE_ALREADY_EXISTS'
+  | 'CYCLE_NOT_IN_ACTIVE'
+  | 'CYCLE_NOT_IN_BOUNDARY_DECISION'
+  | 'ROTATION_EXHAUSTED'
+
   // game state
   | 'GAME_NOT_IN_LOBBY'
   | 'GAME_NOT_IN_PROGRESS'
