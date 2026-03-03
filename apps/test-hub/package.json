@@ -3,9 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "clean": "rm -rf dist node_modules",
+    "build": "tsc -p tsconfig.json",
+    "build:cleanup": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@app/model": "workspace:*",

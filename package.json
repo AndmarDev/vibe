@@ -7,9 +7,10 @@
     "build": "pnpm -r run build",
     "build:cleanup": "pnpm -r run build:cleanup",
     "typecheck": "pnpm -r run typecheck",
-    "cbuild": "pnpm -r run build:cleanup && pnpm run build:all",
+    "cbuild": "pnpm -r run build:cleanup && pnpm run build",
     "test": "pnpm --filter @app/test-hub test",
-    "test:watch": "pnpm --filter @app/test-hub test:watch"
+    "test:watch": "pnpm --filter @app/test-hub test:watch",
+    "cbtest": "pnpm run cbuild && pnpm run test"
   },
   "packageManager": "pnpm@10.26.2",
   "devDependencies": {
