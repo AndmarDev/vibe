@@ -37,11 +37,6 @@ function requireSnapshot(snapshot: GameSnapshot | null): Result<GameSnapshot, Kn
   return ok(snapshot);
 }
 
-function requireGameNotFinished(s: GameSnapshot): Result<GameSnapshot, KnownError> {
-  if (s.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
-  return ok(s);
-}
-
 function requireGameInProgress(s: GameSnapshot): Result<GameSnapshot, KnownError> {
   if (s.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
   if (s.state !== 'IN_PROGRESS') return err(conflict('GAME_NOT_IN_PROGRESS'));
@@ -77,6 +72,80 @@ function nextJoinIndex(players: Player[]): number {
     if (p.joinIndex > max) max = p.joinIndex;
   }
   return max + 1;
+}
+
+function applyPlayerAdd(s0: GameSnapshot, playerId: PlayerId, isHostFlag: boolean): Result<GameSnapshot, KnownError> {
+  if (s0.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
+  if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
+
+  if (s0.players.some((p) => p.playerId === playerId)) return err(conflict('PLAYER_ALREADY_EXISTS'));
+
+  if (isHostFlag) {
+    const existingHost = s0.players.find((p) => p.isHost);
+    if (existingHost) return err(conflict('HOST_ALREADY_EXISTS'));
+  }
+
+  const joinIndex = nextJoinIndex(s0.players);
+  const players1 = [...s0.players, { playerId, isHost: isHostFlag, joinIndex }];
+
+  return ok({ ...s0, players: players1 });
+}
+
+function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnapshot, KnownError> {
+  if (s0.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
+
+  const target = s0.players.find((p) => p.playerId === removeId);
+  if (!target) return err(conflict('PLAYER_NOT_FOUND'));
+  if (target.isHost) return err(conflict('HOST_CANNOT_BE_REMOVED'));
+
+  // remove ur players (kvarvarande-lista)
+  let players1 = s0.players.filter((p) => p.playerId !== removeId);
+
+  // minPlayers termination (2A/2C): <3 => FINISHED och activeRound = null via finishGameIfNotFinished
+  if (players1.length < 3) {
+    return ok(finishGameIfNotFinished({ ...s0, players: players1 }));
+  }
+
+  // cycle/round interaction (vi har redan denna logik i din nuvarande PLAYER_REMOVE_SYSTEM)
+  // Vi återanvänder samma logik genom att köra den via "lokala variabler" och skriva tillbaka.
+  let round1 = s0.activeRound;
+  let cycle1 = s0.activeCycle;
+
+  if (s0.state === 'IN_PROGRESS' && cycle1) {
+    // Oracle-remove under pågående round => abort + clear
+    if (round1 && round1.state !== 'REVEALED' && round1.state !== 'ABORTED') {
+      if (round1.oraclePlayerId === removeId) {
+        round1 = null;
+      }
+    }
+
+    // Invariant: rotation ⊆ players (oavsett cycle state)
+    const oldRotation = cycle1.rotation;
+    const newRotation = oldRotation.filter((id) => id !== removeId);
+
+    let newIndex = cycle1.rotationIndex;
+
+    if (cycle1.state === 'ACTIVE') {
+      const oldIndex = cycle1.rotationIndex;
+      const removedPos = oldRotation.indexOf(removeId);
+      if (removedPos !== -1 && removedPos < oldIndex) newIndex = oldIndex - 1;
+
+      if (newIndex < 0) newIndex = 0;
+      if (newIndex > newRotation.length) newIndex = newRotation.length;
+    } else {
+      if (newIndex > newRotation.length) newIndex = newRotation.length;
+      if (newIndex < 0) newIndex = 0;
+    }
+
+    cycle1 = { ...cycle1, rotation: newRotation, rotationIndex: newIndex };
+
+    // Post-condition: boundary kan bara sättas om ingen activeRound finns kvar
+    if (cycle1.state === 'ACTIVE' && round1 === null && cycle1.rotationIndex >= cycle1.rotation.length) {
+      cycle1 = { ...cycle1, state: 'BOUNDARY_DECISION' };
+    }
+  }
+
+  return ok({ ...s0, players: players1, activeRound: round1, activeCycle: cycle1 });
 }
 
 // Helper: ingen bump här. Caller ansvarar för exakt en bump.
@@ -146,32 +215,24 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
-      const nf = requireGameNotFinished(s0r.value);
-      if (!nf.ok) return nf;
-      const s0 = nf.value;
+      const r1 = applyPlayerAdd(s0r.value, c.playerId, c.isHost);
+      if (!r1.ok) return r1;
 
-      // Add endast i LOBBY, för tillfället.
-      if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
+      return ok({ snapshot: bump(r1.value), effects: [] });
+    }
 
-      for (const p of s0.players) {
-        if (p.playerId === c.playerId) return err(conflict('PLAYER_ALREADY_EXISTS'));
-      }
+    case 'PLAYER_ADD': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+      const s0 = s0r.value;
 
-      if (c.isHost) {
-        const host = findHost(s0.players);
-        if (host) return err(conflict('HOST_ALREADY_EXISTS'));
-      }
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
 
-      const p: Player = {
-        playerId: c.playerId,
-        isHost: c.isHost,
-        joinIndex: nextJoinIndex(s0.players),
-      };
+      const r1 = applyPlayerAdd(s0, c.playerId, c.isHost);
+      if (!r1.ok) return r1;
 
-      return ok({
-        snapshot: bump({ ...s0, players: [...s0.players, p] }),
-        effects: [],
-      });
+      return ok({ snapshot: bump(r1.value), effects: [] });
     }
 
     case 'PLAYER_REMOVE_SYSTEM': {
@@ -179,76 +240,24 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
+      const r1 = applyPlayerRemove(s0r.value, c.playerId);
+      if (!r1.ok) return r1;
+
+      return ok({ snapshot: bump(r1.value), effects: [] });
+    }
+
+    case 'PLAYER_REMOVE': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
       const s0 = s0r.value;
-      if (s0.state === 'FINISHED') return ok({ snapshot: s0, effects: [] }); // idempotent-ish
 
-      // --- find + validate ---
-      const idx = s0.players.findIndex((p) => p.playerId === c.playerId);
-      if (idx === -1) return err(conflict('PLAYER_NOT_FOUND'));
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
 
-      const toRemove = s0.players[idx];
-      if (toRemove.isHost) return err(conflict('HOST_CANNOT_BE_REMOVED'));
+      const r1 = applyPlayerRemove(s0, c.playerId);
+      if (!r1.ok) return r1;
 
-      // --- remove from players ---
-      const players1 = s0.players.filter((p) => p.playerId !== c.playerId);
-
-      // --- hard termination if < minPlayers ---
-      if (players1.length < 3) {
-        const s1: GameSnapshot = finishGameIfNotFinished({ ...s0, players: players1 });
-        return ok({ snapshot: bump(s1), effects: [] });
-      }
-
-      // --- cycle/round interaction ---
-      let cycle1 = s0.activeCycle;
-      let round1 = s0.activeRound;
-
-      if (s0.state === 'IN_PROGRESS' && cycle1) {
-        // 1) Oracle-remove under pågående round => abort + clear (ingen round-historik i snapshot)
-        if (round1 && round1.state !== 'REVEALED' && round1.state !== 'ABORTED') {
-          if (round1.oraclePlayerId === c.playerId) {
-            round1 = null;
-          }
-        }
-
-        // 2) Invariant: rotation får aldrig innehålla en player som inte finns kvar.
-        const oldRotation = cycle1.rotation;
-        const newRotation = oldRotation.filter((id) => id !== c.playerId);
-
-        // Håll rotation uppdaterad oavsett cycle state.
-        // Index-justering görs bara när cycle är ACTIVE (2C scope).
-        let newIndex = cycle1.rotationIndex;
-
-        if (cycle1.state === 'ACTIVE') {
-          const oldIndex = cycle1.rotationIndex;
-          const removedPos = oldRotation.indexOf(c.playerId);
-
-          // invariant: om id inte fanns i rotation, ingen indexjustering
-          if (removedPos !== -1 && removedPos < oldIndex) newIndex = oldIndex - 1;
-
-          if (newIndex < 0) newIndex = 0;
-          if (newIndex > newRotation.length) newIndex = newRotation.length;
-        } else {
-          // i BOUNDARY_DECISION: bara clamp så index inte pekar utanför
-          if (newIndex > newRotation.length) newIndex = newRotation.length;
-          if (newIndex < 0) newIndex = 0;
-        }
-
-        cycle1 = { ...cycle1, rotation: newRotation, rotationIndex: newIndex };
-
-        // 3) Post-condition: boundary kan bara gälla om ingen activeRound finns kvar
-        if (cycle1.state === 'ACTIVE' && round1 === null && cycle1.rotationIndex >= cycle1.rotation.length) {
-          cycle1 = { ...cycle1, state: 'BOUNDARY_DECISION' };
-        }
-      }
-
-      const s1: GameSnapshot = {
-        ...s0,
-        players: players1,
-        activeCycle: cycle1,
-        activeRound: round1,
-      };
-
-      return ok({ snapshot: bump(s1), effects: [] });
+      return ok({ snapshot: bump(r1.value), effects: [] });
     }
 
     case 'GAME_START': {
@@ -273,9 +282,25 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!s0r.ok) return s0r;
 
       const s0 = s0r.value;
-      if (s0.state === 'FINISHED') return ok({ snapshot: s0, effects: [] }); // idempotent
+      const s1 = finishGameIfNotFinished(s0);
+
+      // idempotent: om inget ändrades, bumpa inte
+      if (s1 === s0) return ok({ snapshot: s0, effects: [] });
+
+      return ok({ snapshot: bump(s1), effects: [] });
+    }
+
+    case 'GAME_FINISH': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+      const s0 = s0r.value;
+
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
 
       const s1 = finishGameIfNotFinished(s0);
+
+      if (s1 === s0) return ok({ snapshot: s0, effects: [] });
       return ok({ snapshot: bump(s1), effects: [] });
     }
 

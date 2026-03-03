@@ -465,3 +465,89 @@ describe('remove-player interactions with cycle/round', () => {
     expect(removed.activeRound?.oraclePlayerId).toBe(4);
   });
 });
+
+describe('host triggers vs system triggers', () => {
+  it('PLAYER_ADD is host-only', () => {
+    const lobby = createLobbyWithPlayers([{ playerId: 10, isHost: true }]);
+
+    const r = apply({
+      snapshot: lobby,
+      actor: player2,
+      command: { type: 'PLAYER_ADD', playerId: 2, isHost: false },
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(403);
+      expect(r.error.code).toBe('FORBIDDEN');
+      expect(r.error.reason).toBe('HOST_ONLY');
+    }
+  });
+
+  it('PLAYER_REMOVE is host-only', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    const r = apply({
+      snapshot: lobby,
+      actor: player2,
+      command: { type: 'PLAYER_REMOVE', playerId: 3 },
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(403);
+      expect(r.error.code).toBe('FORBIDDEN');
+      expect(r.error.reason).toBe('HOST_ONLY');
+    }
+  });
+
+  it('GAME_FINISH is host-only', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    const r = apply({
+      snapshot: lobby,
+      actor: player2,
+      command: { type: 'GAME_FINISH' },
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(403);
+      expect(r.error.code).toBe('FORBIDDEN');
+      expect(r.error.reason).toBe('HOST_ONLY');
+    }
+  });
+
+  it('host vs system commands are transport-only (same snapshot except gameSeq)', () => {
+    const lobby0 = createLobbyWithPlayers([{ playerId: 10, isHost: true }]);
+
+    const hostAdded = unwrap(
+      apply({
+        snapshot: lobby0,
+        actor: host10,
+        command: { type: 'PLAYER_ADD', playerId: 2, isHost: false },
+      }),
+    ).snapshot;
+
+    const lobby1 = createLobbyWithPlayers([{ playerId: 10, isHost: true }]);
+    const systemAdded = unwrap(
+      apply({
+        snapshot: lobby1,
+        actor: system,
+        command: { type: 'PLAYER_ADD_SYSTEM', playerId: 2, isHost: false },
+      }),
+    ).snapshot;
+
+    const { gameSeq: _a, ...a } = hostAdded;
+    const { gameSeq: _b, ...b } = systemAdded;
+    expect(a).toEqual(b);
+  });
+});

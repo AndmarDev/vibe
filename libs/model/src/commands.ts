@@ -5,10 +5,13 @@ import type { CycleId, Difficulty, GameId, PlayerId, RoundId } from './domain.js
 export type Command =
   | { type: 'GAME_CREATE'; gameId: GameId }
   | { type: 'GAME_START' } // host-only
-  | { type: 'GAME_FINISH_SYSTEM' } // system-only
+  | { type: 'GAME_FINISH_SYSTEM' }
+  | { type: 'GAME_FINISH' }
 
   | { type: 'PLAYER_ADD_SYSTEM'; playerId: PlayerId; isHost: boolean }
+  | { type: 'PLAYER_ADD'; playerId: PlayerId; isHost: boolean }
   | { type: 'PLAYER_REMOVE_SYSTEM'; playerId: PlayerId }
+  | { type: 'PLAYER_REMOVE'; playerId: PlayerId }
 
   | { type: 'CYCLE_CREATE_SYSTEM'; cycleId: CycleId }
   | { type: 'CYCLE_DECIDE'; decision: 'START_NEXT'; nextCycleId: CycleId }
