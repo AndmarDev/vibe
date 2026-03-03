@@ -473,7 +473,7 @@ describe('host triggers vs system triggers', () => {
     const r = apply({
       snapshot: lobby,
       actor: player2,
-      command: { type: 'PLAYER_ADD', playerId: 2, isHost: false },
+      command: { type: 'PLAYER_ADD', playerId: 2 },
     });
 
     expect(r.ok).toBe(false);
@@ -587,7 +587,7 @@ describe('host triggers vs system triggers', () => {
       apply({
         snapshot: lobby0,
         actor: host10,
-        command: { type: 'PLAYER_ADD', playerId: 2, isHost: false },
+        command: { type: 'PLAYER_ADD', playerId: 2 },
       }),
     ).snapshot;
 

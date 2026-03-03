@@ -75,6 +75,7 @@ function nextJoinIndex(players: Player[]): number {
   return max + 1;
 }
 
+// Lägg till en player i snapshot, antingen host eller vanlig player (icke-host)
 function applyPlayerAdd(s0: GameSnapshot, playerId: PlayerId, isHostFlag: boolean): Result<GameSnapshot, KnownError> {
   if (s0.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
   if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
@@ -255,11 +256,12 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: s, effects: [] });
     }
 
-    case 'PLAYER_ADD_SYSTEM': {
+    case 'PLAYER_ADD_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
+      // lägg till host eller vanlig player (icke-host)
       const r1 = applyPlayerAdd(s0r.value, c.playerId, c.isHost);
       if (!r1.ok) return r1;
 
@@ -274,13 +276,14 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const hr = requireHostActor(actor, s0);
       if (!hr.ok) return hr;
 
-      const r1 = applyPlayerAdd(s0, c.playerId, c.isHost);
+      // lägg till vanlig player (icke-host)
+      const r1 = applyPlayerAdd(s0, c.playerId, false);
       if (!r1.ok) return r1;
 
       return ok({ snapshot: bump(r1.value), effects: [] });
     }
 
-    case 'PLAYER_REMOVE_SYSTEM': {
+    case 'PLAYER_REMOVE_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
@@ -321,7 +324,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: bump({ ...s0, state: 'IN_PROGRESS' }), effects: [] });
     }
 
-    case 'GAME_FINISH_SYSTEM': {
+    case 'GAME_FINISH_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
@@ -349,7 +352,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: bump(s1), effects: [] });
     }
 
-    case 'CYCLE_CREATE_SYSTEM': {
+    case 'CYCLE_CREATE_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
@@ -418,7 +421,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: bump(s1), effects: [] });
     }
 
-    case 'ROUND_CREATE_SYSTEM': {
+    case 'ROUND_CREATE_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
@@ -540,7 +543,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       return ok({ snapshot: bump(s1), effects: [] });
     }
 
-    case 'ROUND_ABORT_SYSTEM': {
+    case 'ROUND_ABORT_SYSTEM': { // internal only
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
