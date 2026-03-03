@@ -18,6 +18,7 @@ export type Command =
   | { type: 'CYCLE_DECIDE'; decision: 'FINISH_GAME' }
 
   | { type: 'ROUND_CREATE_SYSTEM'; roundId: RoundId } // oracle hämtas från rotation
+  | { type: 'ROUND_CREATE'; roundId: RoundId } // host-only
   | { type: 'ROUND_BEGIN' }
   | { type: 'ROUND_SET_PREDICTION'; difficulty: Difficulty }
   | { type: 'ROUND_LOCK' }

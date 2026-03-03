@@ -8,6 +8,7 @@ import type {
   KnownError,
   Player,
   PlayerId,
+  RoundId,
   Result,
 } from '@app/model';
 import type { Command } from '@app/model';
@@ -146,6 +147,44 @@ function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnaps
   }
 
   return ok({ ...s0, players: players1, activeRound: round1, activeCycle: cycle1 });
+}
+
+// "Ren" domänlogik: inga state-guards (IN_PROGRESS/CYCLE_ACTIVE), ingen bump.
+// Förväntar sig att caller redan har validerat att game är IN_PROGRESS och cycle är ACTIVE.
+function createRoundInActiveCycle(s0: GameSnapshot, cycle: ActiveCycle, roundId: RoundId): Result<GameSnapshot, KnownError> {
+  if (s0.activeRound !== null) return err(conflict('ROUND_ALREADY_EXISTS'));
+
+  if (cycle.rotationIndex >= cycle.rotation.length) {
+    return err(conflict('ROTATION_EXHAUSTED'));
+  }
+
+  const oraclePlayerId = cycle.rotation[cycle.rotationIndex];
+
+  const s1: GameSnapshot = {
+    ...s0,
+    activeRound: {
+      roundId,
+      state: 'READY',
+      oraclePlayerId,
+      prediction: null,
+    },
+  };
+
+  return ok(s1);
+}
+
+function applyRoundCreate(s0: GameSnapshot, roundId: RoundId): Result<GameSnapshot, KnownError> {
+  const gp = requireGameInProgress(s0);
+  if (!gp.ok) return gp;
+
+  const s = gp.value;
+
+  const cr = requireCycleActive(s);
+  if (!cr.ok) return cr;
+
+  const cycle = cr.value;
+
+  return createRoundInActiveCycle(s, cycle, roundId);
 }
 
 function applyRoundAbort(s0: GameSnapshot): GameSnapshot {
@@ -384,31 +423,24 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
-      const gp = requireGameInProgress(s0r.value);
-      if (!gp.ok) return gp;
-      const s0 = gp.value;
+      const r1 = applyRoundCreate(s0r.value, c.roundId);
+      if (!r1.ok) return r1;
 
-      const cr = requireCycleActive(s0);
-      if (!cr.ok) return cr;
-      const cycle = cr.value;
+      return ok({ snapshot: bump(r1.value), effects: [] });
+    }
 
-      if (s0.activeRound) return err(conflict('ROUND_ALREADY_EXISTS'));
+    case 'ROUND_CREATE': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+      const s0 = s0r.value;
 
-      if (cycle.rotationIndex >= cycle.rotation.length) return err(conflict('ROTATION_EXHAUSTED'));
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
 
-      const oraclePlayerId = cycle.rotation[cycle.rotationIndex];
+      const r1 = applyRoundCreate(s0, c.roundId);
+      if (!r1.ok) return r1;
 
-      const s1: GameSnapshot = {
-        ...s0,
-        activeRound: {
-          roundId: c.roundId,
-          state: 'READY',
-          oraclePlayerId,
-          prediction: null,
-        },
-      };
-
-      return ok({ snapshot: bump(s1), effects: [] });
+      return ok({ snapshot: bump(r1.value), effects: [] });
     }
 
     case 'ROUND_BEGIN': {

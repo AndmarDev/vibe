@@ -505,6 +505,60 @@ describe('host triggers vs system triggers', () => {
     }
   });
 
+  it('ROUND_CREATE is host-only', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    const s = startAndCreateCycle(lobby, 1);
+    expect(s.state).toBe('IN_PROGRESS');
+    expect(s.activeCycle?.state).toBe('ACTIVE');
+    expect(s.activeRound).toBe(null);
+
+    const r = apply({
+      snapshot: s,
+      actor: player2,
+      command: { type: 'ROUND_CREATE', roundId: 123 },
+    });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(403);
+      expect(r.error.code).toBe('FORBIDDEN');
+      expect(r.error.reason).toBe('HOST_ONLY');
+    }
+  });
+
+  it('ROUND_CREATE host vs system is transport-only (same snapshot except gameSeq)', () => {
+    const lobbyA = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+    const sA = startAndCreateCycle(lobbyA, 1);
+
+    const hostCreated = unwrap(
+      apply({ snapshot: sA, actor: host10, command: { type: 'ROUND_CREATE', roundId: 999 } }),
+    ).snapshot;
+
+    const lobbyB = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+    const sB = startAndCreateCycle(lobbyB, 1);
+
+    const systemCreated = unwrap(
+      apply({ snapshot: sB, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 999 } }),
+    ).snapshot;
+
+    const { gameSeq: _a, ...a } = hostCreated;
+    const { gameSeq: _b, ...b } = systemCreated;
+    expect(a).toEqual(b);
+  });
+
   it('GAME_FINISH is host-only', () => {
     const lobby = createLobbyWithPlayers([
       { playerId: 10, isHost: true },
@@ -551,6 +605,7 @@ describe('host triggers vs system triggers', () => {
     expect(a).toEqual(b);
   });
 });
+
 
 describe('host triggers round abort', () => {
   it('ROUND_ABORT is host-only', () => {
