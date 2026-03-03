@@ -99,13 +99,12 @@ Round som inte nått `REVEALED`, ska den Rounden först övergå till `ABORTED`.
 
 Efter att Rounden övergått till `ABORTED` övergår Game till `FINISHED`.
 
-Ingen tilldelning av Song Cards, Oracle Cards eller uppdatering av
-Joker-saldo ska ske för den avbrutna Rounden.
-
-En avbruten Round kan aldrig generera:
-- Song Cards
+Ingen tilldelning av Cards eller uppdatering av Joker-saldo ska ske för avbruten Round.
+Det vill säga, en avbruten Round kan aldrig generera:
+- Vibe Card
+- Hit Card
 - Oracle Card
-- Jokrar
+- Joker
 
 # NORMATIVT: Borttagning av Players
 
@@ -165,22 +164,15 @@ En Cycle övergår till `FINISHED` när:
 - Host i `BOUNDARY_DECISION` väljer att starta en ny Cycle, eller
 - Host i `BOUNDARY_DECISION` väljer att avsluta Game.
 
-Om Game avslutas medan en Cycle är i `ACTIVE` räknas
-den Cyclen inte i slutlig ranking.
+Om Game avslutas medan en Cycle är i `ACTIVE` räknas den Cyclen inte i slutlig ranking.
 
-Om Game övergår till `FINISHED` utan att någon Cycle har
-nått `FINISHED` fastställs ingen ranking.
+Om Game övergår till `FINISHED` utan att någon Cycle har nått `FINISHED` fastställs ingen ranking.
 
-Vid övergång till `FINISHED` fastställs ranking utifrån
-samtliga kort i tidslinjen för varje kvarvarande Player.
+Vid övergång till `FINISHED` fastställs ranking för varje kvarvarande Player.
 
 Ranking bestäms i följande ordning:
 
-1. Antal kort i tidslinjen (högst vinner).
+1. Antal Vibe Cards (högst vinner).
 2. Vid lika: antal Oracle Cards (högst vinner).
-3. Vid fortsatt lika: antal Stars (⭐, högst vinner).
+3. Vid fortsatt lika: antal Hit Cards (högst vinner).
 4. Vid fortsatt lika: delad vinst.
-
-Endast Start Cards och Song Cards placeras i tidslinjen.
-
-Oracle Cards placeras inte i tidslinjen och räknas endast som utslagsgivare.

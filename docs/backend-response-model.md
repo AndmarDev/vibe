@@ -32,7 +32,8 @@ Snapshot kan innehålla:
 - Oracle för Rounden
 - aktiv Performance (utan facit före `REVEALED`)
 - publik submit-status per Player (t.ex. om Guess är inskickad)
-- Song Cards (inkl. Start Cards) i respektive tidslinje
+- Start Cards och Vibe Cards i respektive Players timeline
+- Hit Cards
 - Oracle Cards
 - publikt Joker-saldo per Player
 - fastställd svårighetsgrad (endast i `REVEALED`)
@@ -153,7 +154,8 @@ Snapshot ska visa:
 - korrekt artist
 - bedömning av varje Players Placement
 - bedömning av Title Guess och Artist Guess
-- tilldelade Song Cards
+- tilldelade Vibe Cards
+- tilldelade Hit Cards
 - tilldelade Oracle Cards
 - uppdaterade publika Joker-saldon
 - fastställd svårighetsgrad

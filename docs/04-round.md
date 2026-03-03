@@ -196,26 +196,21 @@ Endast kvarvarande Players kan tilldelas Card.
 Tilldelning sker vid `REVEALED`.
 
 För varje kvarvarande Player (ej Oracle):
-- Om Placement är korrekt → ett Song Card som placeras i Playerns tidslinje.
-- Om samma Player även har korrekt Title Guess och korrekt Artist Guess
-  ska Song Card markeras med en Star (⭐).
+- Om Placement är korrekt → ett Vibe Card.
+- Om Placement är inkorrekt men både Title Guess och Artist Guess är korrekta → ett Hit Card.
+
+En Player kan få högst ett av dessa två kort i en Round.
 
 För Oracle:
 - Om Prediction är korrekt → ett Oracle Card.
-
-Song Card representerar den Song som tillhör den Performance som var aktiv vid LOCKED.
-Song Cards placeras i tidslinjen och avgör vem som vinner spelet.
-
-Oracle Cards placeras inte i tidslinjen och används endast som tie-break enligt `02-game`.
 
 # NORMATIVT: Tilldelning av Jokrar
 
 Joker tilldelas endast vid `REVEALED`.
 
 En kvarvarande Player (ej Oracle) tilldelas 1 Joker om:
+- Placement är korrekt, och
 - både Title Guess och Artist Guess är korrekta.
-
-Joker tilldelas oberoende av om Placement var korrekt.
 
 En Player kan vinna högst 1 Joker per Round.
 

@@ -158,7 +158,8 @@ Ett persistent objekt som tillhör en Player i ett Game och som tilldelas enligt
 
 Card är en kategori som inkluderar:
 - Start Card
-- Song Card
+- Vibe Card
+- Hit Card
 - Oracle Card
 
 ## Start Card
@@ -172,7 +173,7 @@ Ett Card som skapas vid Game-start och etablerar Playerns initiala timeline-posi
 - Placeras i Playerns timeline.
 - Påverkar framtida Placement.
 
-## Song Card
+## Vibe Card
 
 **Definition:**
 Ett Card som representerar en Song som en Player placerat korrekt i sin tidslinje.
@@ -182,9 +183,17 @@ Ett Card som representerar en Song som en Player placerat korrekt i sin tidslinj
 - Placeras i Playerns timeline.
 - Påverkar framtida Placement.
 - Räknas i slutresultatet.
-- Kan ha en Star (⭐) om både Placement, Title Guess och Artist Guess var korrekta i samma Round.
-- Star påverkar inte tilldelning av kortet.
-- Star används endast som sista utslagsgivare vid lika i slutlig ranking.
+
+## Hit Card
+
+**Definition:**
+Ett Card som representerar en Song där Playern gissat korrekt Title och Artist men placerat låten fel i tidslinjen.
+
+**Egenskaper:**
+- Innehåller Song och year.
+- Placeras inte i Playerns timeline.
+- Påverkar inte framtida Placement.
+- Räknas endast som utslagsgivare i slutlig ranking.
 
 ## Oracle Card
 
@@ -194,8 +203,7 @@ Ett Card som representerar rundans Song och tilldelas Oracle vid korrekt Predict
 **Egenskaper:**
 - Innehåller Song och year.
 - Placeras inte i Playerns timeline.
-- Räknas inte i antalet kort i tidslinjen när vinnare koras.
-- Används endast som utslagsgivare vid lika många kort i tidslinjen.
+- Räknas som utslagsgivare i slutlig ranking.
 
 ## Joker
 
@@ -207,19 +215,6 @@ En resurs som en Player kan använda för att förenkla Placement i en Round.
 - Joker påverkar aldrig korrekt svar eller bedömning.
 - Joker kan endast användas på Placement.
 - Exakta regler för begränsningar, effekt, intjäning och saldo definieras i 07-joker.
-
-## Star (⭐)
-
-**Definition:**
-En markering på ett Song Card som visar att Playern i
-samma Round hade korrekt Placement, Title Guess och Artist Guess.
-
-**Egenskaper:**
-- En Star kan endast finnas på ett Song Card.
-- En Round kan ge högst en Star per Player.
-- Star är inte ett eget Card.
-- Star påverkar inte tidslinjen eller spelets flöde.
-- Star används endast som sista tie-break i slutlig ranking.
 
 # NORMATIVT: Music Model
 
@@ -259,4 +254,6 @@ En kuraterad samling av Songs.
 - En Round kan ha högst en aktiv Performance åt gången.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokrar genereras genom Round.
+- Start Cards och Vibe Cards placeras i Playerns timeline.
+- Hit Cards och Oracle Cards placeras inte i timeline.
 - Prediction gäller alltid aktiv Performance.

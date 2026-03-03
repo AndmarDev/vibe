@@ -139,4 +139,4 @@ Tabellen täcker samtliga tillåtna antal gissare (2–9).
 Om Oracles Prediction överensstämmer med den fastställda
 svårighetsgraden tilldelas ett Oracle Card enligt `04-round`.
 
-Guess kan enligt `04-round` generera Song Card och Joker.
+Guess kan enligt `04-round` och `07-joker` generera Vibe Card, Hit Card och Joker.

@@ -78,7 +78,9 @@ avslutade Cyclen, utan ingår först i rotationen för nästa Cycle.
 
 Rotationen påverkas inte av:
 
-- antal Cards
+- antal Vibe Cards
+- antal Hit Cards
+- antal Oracle Cards
 - antal Jokrar
 - tidigare resultat
 

@@ -13,7 +13,7 @@ Joker ändrar aldrig korrekt svar eller bedömning.
 - Varje Player har ett Joker-saldo.
 - Joker-saldo är ett heltal i intervallet 0–3.
 - Joker-saldo är persistent under hela Game.
-- Vid Game-start initialiseras varje Player med saldo 1.
+- Vid Game-start initialiseras varje Player med saldo 2.
 - Oracle kan inte använda eller vinna Joker i sin egen Round.
 
 # NORMATIVT: Intjäning
@@ -21,10 +21,8 @@ Joker ändrar aldrig korrekt svar eller bedömning.
 Joker kan vinnas endast vid övergång till `REVEALED`.
 
 En kvarvarande Player (ej Oracle) vinner 1 Joker om:
-
+- Placement är korrekt, och
 - både Title Guess och Artist Guess är korrekta.
-
-Joker tilldelas oberoende av om Placement var korrekt.
 
 En Player kan vinna högst 1 Joker per Round.
 
