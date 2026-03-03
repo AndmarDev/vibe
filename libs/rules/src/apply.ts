@@ -83,13 +83,11 @@ function nextJoinIndex(players: Player[]): number {
 function finishGameIfNotFinished(s0: GameSnapshot): GameSnapshot {
   if (s0.state === 'FINISHED') return s0;
 
-  const r = s0.activeRound;
-  const shouldAbort = !!r && r.state !== 'REVEALED' && r.state !== 'ABORTED';
-
+  // Policy: FINISHED lämnar ingen hängande round i snapshot.
   return {
     ...s0,
     state: 'FINISHED',
-    activeRound: shouldAbort ? { ...r!, state: 'ABORTED' } : s0.activeRound,
+    activeRound: null,
   };
 }
 
@@ -181,26 +179,74 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
-      const nf = requireGameNotFinished(s0r.value);
-      if (!nf.ok) return nf;
-      const s0 = nf.value;
+      const s0 = s0r.value;
+      if (s0.state === 'FINISHED') return ok({ snapshot: s0, effects: [] }); // idempotent-ish
 
-      let found: Player | null = null;
-      for (const p of s0.players) {
-        if (p.playerId === c.playerId) {
-          found = p;
-          break;
+      // --- find + validate ---
+      const idx = s0.players.findIndex((p) => p.playerId === c.playerId);
+      if (idx === -1) return err(conflict('PLAYER_NOT_FOUND'));
+
+      const toRemove = s0.players[idx];
+      if (toRemove.isHost) return err(conflict('HOST_CANNOT_BE_REMOVED'));
+
+      // --- remove from players ---
+      const players1 = s0.players.filter((p) => p.playerId !== c.playerId);
+
+      // --- hard termination if < minPlayers ---
+      if (players1.length < 3) {
+        const s1: GameSnapshot = finishGameIfNotFinished({ ...s0, players: players1 });
+        return ok({ snapshot: bump(s1), effects: [] });
+      }
+
+      // --- cycle/round interaction ---
+      let cycle1 = s0.activeCycle;
+      let round1 = s0.activeRound;
+
+      if (s0.state === 'IN_PROGRESS' && cycle1) {
+        // 1) Oracle-remove under pågående round => abort + clear (ingen round-historik i snapshot)
+        if (round1 && round1.state !== 'REVEALED' && round1.state !== 'ABORTED') {
+          if (round1.oraclePlayerId === c.playerId) {
+            round1 = null;
+          }
+        }
+
+        // 2) Invariant: rotation får aldrig innehålla en player som inte finns kvar.
+        const oldRotation = cycle1.rotation;
+        const newRotation = oldRotation.filter((id) => id !== c.playerId);
+
+        // Håll rotation uppdaterad oavsett cycle state.
+        // Index-justering görs bara när cycle är ACTIVE (2C scope).
+        let newIndex = cycle1.rotationIndex;
+
+        if (cycle1.state === 'ACTIVE') {
+          const oldIndex = cycle1.rotationIndex;
+          const removedPos = oldRotation.indexOf(c.playerId);
+
+          // invariant: om id inte fanns i rotation, ingen indexjustering
+          if (removedPos !== -1 && removedPos < oldIndex) newIndex = oldIndex - 1;
+
+          if (newIndex < 0) newIndex = 0;
+          if (newIndex > newRotation.length) newIndex = newRotation.length;
+        } else {
+          // i BOUNDARY_DECISION: bara clamp så index inte pekar utanför
+          if (newIndex > newRotation.length) newIndex = newRotation.length;
+          if (newIndex < 0) newIndex = 0;
+        }
+
+        cycle1 = { ...cycle1, rotation: newRotation, rotationIndex: newIndex };
+
+        // 3) Post-condition: boundary kan bara gälla om ingen activeRound finns kvar
+        if (cycle1.state === 'ACTIVE' && round1 === null && cycle1.rotationIndex >= cycle1.rotation.length) {
+          cycle1 = { ...cycle1, state: 'BOUNDARY_DECISION' };
         }
       }
-      if (!found) return err(conflict('PLAYER_NOT_FOUND'));
-      if (found.isHost) return err(conflict('HOST_CANNOT_BE_REMOVED'));
 
-      const players1 = s0.players.filter((p) => p.playerId !== c.playerId);
-      let s1: GameSnapshot = { ...s0, players: players1 };
-
-      if (players1.length < 3) {
-        s1 = finishGameIfNotFinished(s1);
-      }
+      const s1: GameSnapshot = {
+        ...s0,
+        players: players1,
+        activeCycle: cycle1,
+        activeRound: round1,
+      };
 
       return ok({ snapshot: bump(s1), effects: [] });
     }
@@ -440,15 +486,12 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      const r = s0.activeRound;
-      if (!r) return err(conflict('ROUND_REQUIRED'));
-      if (r.state === 'REVEALED') return err(conflict('ROUND_ALREADY_TERMINAL'));
-      if (r.state === 'ABORTED') return ok({ snapshot: s0, effects: [] }); // idempotent
+      // Idempotent: om ingen aktiv round finns (t.ex. redan clearad/abortad via annan väg),
+      // gör inget och bumpa inte.
+      if (s0.activeRound === null) return ok({ snapshot: s0, effects: [] });
 
-      return ok({
-        snapshot: bump({ ...s0, activeRound: { ...r, state: 'ABORTED' } }),
-        effects: [],
-      });
+      // Abort lämnar inte kvar någon round i snapshot.
+      return ok({ snapshot: bump({ ...s0, activeRound: null }), effects: [] });
     }
 
     default: {

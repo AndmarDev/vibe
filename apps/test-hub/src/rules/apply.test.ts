@@ -62,6 +62,10 @@ function playRound(
   return s;
 }
 
+function playerIdsSorted(snapshot: GameSnapshot): number[] {
+  return snapshot.players.map((p) => p.playerId).sort((a, b) => a - b);
+}
+
 describe('cycle + rotation + boundary (no remove-player interactions)', () => {
   it('rotation is deterministic: host first, then joinIndex order', () => {
     const lobby = createLobbyWithPlayers([
@@ -263,5 +267,201 @@ describe('cycle + rotation + boundary (no remove-player interactions)', () => {
       expect(r.error.code).toBe('CONFLICT');
       expect(r.error.reason).toBe('CYCLE_NOT_IN_ACTIVE');
     }
+  });
+});
+
+describe('remove-player interactions with cycle/round', () => {
+  it('remove non-host before their oracle turn: rotation drops id and index stays (next oracle shifts)', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    const p3: Actor = { kind: 'PLAYER', playerId: 3 };
+    const p4: Actor = { kind: 'PLAYER', playerId: 4 };
+
+    // host spelar sin tur => rotationIndex = 1 (nästa skulle varit 2)
+    s = playRound(s, 1, host10, 'EASY');
+    expect(s.activeCycle?.rotation).toEqual([10, 2, 3, 4]);
+    expect(s.activeCycle?.rotationIndex).toBe(1);
+
+    // ta bort player2 (nästa oracle)
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 2 } }),
+    ).snapshot;
+
+    expect(playerIdsSorted(removed)).toEqual([3, 4, 10]);
+    expect(removed.activeCycle?.rotation).toEqual([10, 3, 4]);
+    expect(removed.activeCycle?.rotationIndex).toBe(1); // pekar nu på 3
+    expect(removed.activeRound).toBe(null);
+    expect(removed.activeCycle?.state).toBe('ACTIVE');
+
+    // sanity: nästa round ska få oracle=3
+    const withRound = unwrap(
+      apply({ snapshot: removed, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 2 } }),
+    );
+    expect(withRound.snapshot.activeRound?.oraclePlayerId).toBe(p3.playerId);
+  });
+
+  it('remove non-host after their oracle turn: rotation drops id and index shifts back by 1', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    const p2: Actor = { kind: 'PLAYER', playerId: 2 };
+
+    // host tur + player2 tur => rotationIndex = 2 (nästa är 3)
+    s = playRound(s, 1, host10, 'EASY');
+    s = playRound(s, 2, p2, 'EASY');
+    expect(s.activeCycle?.rotationIndex).toBe(2);
+
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 2 } }),
+    ).snapshot;
+
+    expect(removed.activeCycle?.rotation).toEqual([10, 3, 4]);
+    expect(removed.activeCycle?.rotationIndex).toBe(1); // 2 låg före oldIndex=2 => -1
+  });
+
+  it('remove current oracle during GUESSING aborts round atomärt, keeps rotationIndex, and removes oracle from rotation', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    const p2: Actor = { kind: 'PLAYER', playerId: 2 };
+
+    // host tur => rotationIndex = 1 (nästa oracle = 2)
+    s = playRound(s, 1, host10, 'EASY');
+
+    // skapa round 2 (oracle=2) och börja (GUESSING)
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 2 } })).snapshot;
+    s = unwrap(apply({ snapshot: s, actor: p2, command: { type: 'ROUND_BEGIN' } })).snapshot;
+    expect(s.activeRound?.oraclePlayerId).toBe(2);
+    expect(s.activeRound?.state).toBe('GUESSING');
+    expect(s.activeCycle?.rotationIndex).toBe(1);
+
+    // ta bort oracle=2 under GUESSING => round abort+clear, rotationIndex oförändrat
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 2 } }),
+    ).snapshot;
+
+    expect(removed.activeRound).toBe(null);
+    expect(removed.activeCycle?.rotation).toEqual([10, 3, 4]);
+    expect(removed.activeCycle?.rotationIndex).toBe(1); // turen räknas inte
+
+    // nästa round ska få oracle=3
+    const withRound = unwrap(
+      apply({ snapshot: removed, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 3 } }),
+    );
+    expect(withRound.snapshot.activeRound?.oraclePlayerId).toBe(3);
+  });
+
+  it('remove causing <3 players finishes game and aborts active round if needed', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+
+    // starta en round så att finish måste aborta den
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+    s = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_BEGIN' } })).snapshot;
+
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 2 } }),
+    ).snapshot;
+
+    expect(playerIdsSorted(removed)).toEqual([3, 10]);
+    expect(removed.state).toBe('FINISHED');
+    expect(removed.activeRound).toBe(null);
+  });
+
+  it('remove makes rotation exhausted early -> cycle enters BOUNDARY_DECISION (when no active round)', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    const p2: Actor = { kind: 'PLAYER', playerId: 2 };
+    const p3: Actor = { kind: 'PLAYER', playerId: 3 };
+
+    // host + 2 + 3 => rotationIndex = 3 (nästa skulle vara 4)
+    s = playRound(s, 1, host10, 'EASY');
+    s = playRound(s, 2, p2, 'EASY');
+    s = playRound(s, 3, p3, 'EASY');
+
+    expect(s.activeRound).toBe(null);
+    expect(s.activeCycle?.state).toBe('ACTIVE');
+    expect(s.activeCycle?.rotation).toEqual([10, 2, 3, 4]);
+    expect(s.activeCycle?.rotationIndex).toBe(3);
+
+    // ta bort sista framtida oracle (4) => rotation blir [10,2,3], index=3 => exhausted => boundary
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 4 } })
+    ).snapshot;
+
+    expect(removed.activeCycle?.rotation).toEqual([10, 2, 3]);
+    expect(removed.activeCycle?.rotationIndex).toBe(3);
+    expect(removed.activeCycle?.state).toBe('BOUNDARY_DECISION');
+    expect(removed.activeRound).toBe(null);
+  });
+
+  it('remove does not set BOUNDARY_DECISION while a round is active (post-condition)', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+      { playerId: 4, isHost: false },
+    ]);
+
+    let s = startAndCreateCycle(lobby, 1);
+    const p2: Actor = { kind: 'PLAYER', playerId: 2 };
+    const p3: Actor = { kind: 'PLAYER', playerId: 3 };
+    const p4: Actor = { kind: 'PLAYER', playerId: 4 };
+
+    // host + 2 + 3 => rotationIndex = 3 (nästa oracle = 4)
+    s = playRound(s, 1, host10, 'EASY');
+    s = playRound(s, 2, p2, 'EASY');
+    s = playRound(s, 3, p3, 'EASY');
+
+    expect(s.activeCycle?.rotation).toEqual([10, 2, 3, 4]);
+    expect(s.activeCycle?.rotationIndex).toBe(3);
+    expect(s.activeCycle?.state).toBe('ACTIVE');
+    expect(s.activeRound).toBe(null);
+
+    // skapa round 4 och börja => activeRound != null
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 4 } })).snapshot;
+    s = unwrap(apply({ snapshot: s, actor: p4, command: { type: 'ROUND_BEGIN' } })).snapshot;
+    expect(s.activeRound?.state).toBe('GUESSING');
+
+    // ta bort en icke-oracle (3) så att rotationen skulle bli "exhausted" (len minskar till 3, index=3)
+    const removed = unwrap(
+      apply({ snapshot: s, actor: system, command: { type: 'PLAYER_REMOVE_SYSTEM', playerId: 3 } }),
+    ).snapshot;
+
+    // round fortsätter, så boundary får inte sättas nu
+    expect(removed.activeRound).not.toBe(null);
+    expect(removed.activeCycle?.state).toBe('ACTIVE');
+    expect(removed.activeCycle?.rotationIndex).toBe(2);
+    // rotation uppdaterad (3 bort)
+    expect(removed.activeCycle?.rotation).toEqual([10, 2, 4]);
+    // nästa Oracle är fortfarande 4
+    expect(removed.activeRound?.oraclePlayerId).toBe(4);
   });
 });
