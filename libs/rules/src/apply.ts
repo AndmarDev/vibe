@@ -148,6 +148,12 @@ function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnaps
   return ok({ ...s0, players: players1, activeRound: round1, activeCycle: cycle1 });
 }
 
+function applyRoundAbort(s0: GameSnapshot): GameSnapshot {
+  // Om ingen aktiv round finns, gör inget.
+  if (s0.activeRound === null) return s0; // samma referens => caller kan undvika bump
+  return { ...s0, activeRound: null };
+}
+
 // Helper: ingen bump här. Caller ansvarar för exakt en bump.
 function finishGameIfNotFinished(s0: GameSnapshot): GameSnapshot {
   if (s0.state === 'FINISHED') return s0;
@@ -511,12 +517,31 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      // Idempotent: om ingen aktiv round finns (t.ex. redan clearad/abortad via annan väg),
-      // gör inget och bumpa inte.
-      if (s0.activeRound === null) return ok({ snapshot: s0, effects: [] });
+      const s1 = applyRoundAbort(s0);
 
-      // Abort lämnar inte kvar någon round i snapshot.
-      return ok({ snapshot: bump({ ...s0, activeRound: null }), effects: [] });
+      // idempotent: om inget ändrades, bumpa inte
+      if (s1 === s0) return ok({ snapshot: s0, effects: [] });
+
+      return ok({ snapshot: bump(s1), effects: [] });
+    }
+
+    case 'ROUND_ABORT': {
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const gp = requireGameInProgress(s0r.value);
+      if (!gp.ok) return gp;
+      const s0 = gp.value;
+
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
+
+      const s1 = applyRoundAbort(s0);
+
+      // idempotent: om inget ändrades, bumpa inte
+      if (s1 === s0) return ok({ snapshot: s0, effects: [] });
+
+      return ok({ snapshot: bump(s1), effects: [] });
     }
 
     default: {

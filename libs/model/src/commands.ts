@@ -22,4 +22,5 @@ export type Command =
   | { type: 'ROUND_SET_PREDICTION'; difficulty: Difficulty }
   | { type: 'ROUND_LOCK' }
   | { type: 'ROUND_REVEAL' }
-  | { type: 'ROUND_ABORT_SYSTEM' };
+  | { type: 'ROUND_ABORT_SYSTEM' }
+  | { type: 'ROUND_ABORT' };

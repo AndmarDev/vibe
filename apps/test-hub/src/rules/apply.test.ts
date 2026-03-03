@@ -551,3 +551,64 @@ describe('host triggers vs system triggers', () => {
     expect(a).toEqual(b);
   });
 });
+
+describe('host triggers round abort', () => {
+  it('ROUND_ABORT is host-only', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    // Gör snapshot legitimt: IN_PROGRESS + cycle + aktiv round
+    let s = startAndCreateCycle(lobby, 1);
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+
+    const r = apply({ snapshot: s, actor: player2, command: { type: 'ROUND_ABORT' } });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(403);
+      expect(r.error.code).toBe('FORBIDDEN');
+      expect(r.error.reason).toBe('HOST_ONLY');
+    }
+  });
+
+  it('ROUND_ABORT clears activeRound and is idempotent (no bump when already null)', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    // in progress + cycle + create a round
+    let s = startAndCreateCycle(lobby, 1);
+    s = unwrap(apply({ snapshot: s, actor: system, command: { type: 'ROUND_CREATE_SYSTEM', roundId: 1 } })).snapshot;
+    expect(s.activeRound).not.toBe(null);
+
+    const aborted = unwrap(apply({ snapshot: s, actor: host10, command: { type: 'ROUND_ABORT' } })).snapshot;
+    expect(aborted.gameSeq).toBe(s.gameSeq + 1);
+    expect(aborted.activeRound).toBe(null);
+
+    const seqBefore = aborted.gameSeq;
+    const abortedAgain = unwrap(apply({ snapshot: aborted, actor: host10, command: { type: 'ROUND_ABORT' } })).snapshot;
+    expect(abortedAgain.gameSeq).toBe(seqBefore); // ingen bump på idempotent no-op
+  });
+
+  it('ROUND_ABORT requires IN_PROGRESS', () => {
+    const lobby = createLobbyWithPlayers([
+      { playerId: 10, isHost: true },
+      { playerId: 2, isHost: false },
+      { playerId: 3, isHost: false },
+    ]);
+
+    const r = apply({ snapshot: lobby, actor: host10, command: { type: 'ROUND_ABORT' } });
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.status).toBe(409);
+      expect(r.error.code).toBe('CONFLICT');
+      expect(r.error.reason).toBe('GAME_NOT_IN_PROGRESS');
+    }
+  });
+});
