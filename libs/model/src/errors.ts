@@ -10,6 +10,15 @@ export type KnownErrorReason =
   // auth / actor
   | 'SYSTEM_ONLY'
   | 'ORACLE_ONLY'
+  | 'HOST_ONLY'
+
+  // players / host
+  | 'HOST_REQUIRED'
+  | 'MIN_PLAYERS_REQUIRED'
+  | 'PLAYER_ALREADY_EXISTS'
+  | 'PLAYER_NOT_FOUND'
+  | 'HOST_CANNOT_BE_REMOVED'
+  | 'HOST_ALREADY_EXISTS'
 
   // game state
   | 'GAME_NOT_IN_LOBBY'

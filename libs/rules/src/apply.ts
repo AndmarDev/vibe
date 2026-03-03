@@ -1,6 +1,6 @@
 // libs/rules/src/apply.ts
 
-import type { Actor, ActiveRound, GameSnapshot, KnownError, Result } from '@app/model';
+import type { Actor, ActiveRound, GameSnapshot, KnownError, Player, Result } from '@app/model';
 import type { Command } from '@app/model';
 import { ok, err, badRequest, conflict, forbidden } from '@app/model';
 
@@ -28,6 +28,11 @@ function requireSnapshot(snapshot: GameSnapshot | null): Result<GameSnapshot, Kn
   return ok(snapshot);
 }
 
+function requireGameNotFinished(s: GameSnapshot): Result<GameSnapshot, KnownError> {
+  if (s.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
+  return ok(s);
+}
+
 // Round-kommandon får bara köras när spelet är IN_PROGRESS
 function requireGameInProgress(s: GameSnapshot): Result<GameSnapshot, KnownError> {
   if (s.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
@@ -43,6 +48,43 @@ function requireOracle(actor: Actor, s: GameSnapshot): Result<ActiveRound, Known
   return ok(r);
 }
 
+function findHost(players: Player[]): Player | null {
+  for (const p of players) {
+    if (p.isHost) return p;
+  }
+  return null;
+}
+
+function requireHostActor(actor: Actor, s: GameSnapshot): Result<Player, KnownError> {
+  const host = findHost(s.players);
+  if (!host) return err(conflict('HOST_REQUIRED'));
+  if (actor.kind !== 'PLAYER') return err(forbidden('HOST_ONLY'));
+  if (actor.playerId !== host.playerId) return err(forbidden('HOST_ONLY'));
+  return ok(host);
+}
+
+function nextJoinIndex(players: Player[]): number {
+  let max = -1;
+  for (const p of players) {
+    if (p.joinIndex > max) max = p.joinIndex;
+  }
+  return max + 1;
+}
+
+// Helper: ingen bump här. Caller ansvarar för exakt en bump.
+function finishGameIfNotFinished(s0: GameSnapshot): GameSnapshot {
+  if (s0.state === 'FINISHED') return s0;
+
+  const r = s0.activeRound;
+  const shouldAbort = !!r && r.state !== 'REVEALED' && r.state !== 'ABORTED';
+
+  return {
+    ...s0,
+    state: 'FINISHED',
+    activeRound: shouldAbort ? { ...r!, state: 'ABORTED' } : s0.activeRound,
+  };
+}
+
 export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
   const { snapshot, actor, command: c } = input;
 
@@ -54,19 +96,87 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
         gameId: c.gameId,
         gameSeq: 0,
         state: 'LOBBY',
+        players: [],
         activeRound: null,
       };
       return ok({ snapshot: s, effects: [] });
     }
 
-    case 'GAME_START_SYSTEM': {
+    case 'PLAYER_ADD_SYSTEM': {
       if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const nf = requireGameNotFinished(s0r.value);
+      if (!nf.ok) return nf;
+      const s0 = nf.value;
+
+      // Håll snittet tunt -> vi tillåter add endast i LOBBY.
+      if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
+
+      for (const p of s0.players) {
+        if (p.playerId === c.playerId) return err(conflict('PLAYER_ALREADY_EXISTS'));
+      }
+
+      if (c.isHost) {
+        const host = findHost(s0.players);
+        if (host) return err(conflict('HOST_ALREADY_EXISTS'));
+      }
+
+      const p: Player = {
+        playerId: c.playerId,
+        isHost: c.isHost,
+        joinIndex: nextJoinIndex(s0.players),
+      };
+
+      return ok({
+        snapshot: bump({ ...s0, players: [...s0.players, p] }),
+        effects: [],
+      });
+    }
+
+    case 'PLAYER_REMOVE_SYSTEM': {
+      if (!isSystem(actor)) return err(forbidden('SYSTEM_ONLY'));
+      const s0r = requireSnapshot(snapshot);
+      if (!s0r.ok) return s0r;
+
+      const nf = requireGameNotFinished(s0r.value);
+      if (!nf.ok) return nf;
+      const s0 = nf.value;
+
+      let found: Player | null = null;
+      for (const p of s0.players) {
+        if (p.playerId === c.playerId) {
+          found = p;
+          break;
+        }
+      }
+      if (!found) return err(conflict('PLAYER_NOT_FOUND'));
+      if (found.isHost) return err(conflict('HOST_CANNOT_BE_REMOVED'));
+
+      const players1 = s0.players.filter((p) => p.playerId !== c.playerId);
+      let s1: GameSnapshot = { ...s0, players: players1 };
+
+      // minPlayers-gating: om kvarvarande < 3 -> finish (abort round vid behov)
+      if (players1.length < 3) {
+        s1 = finishGameIfNotFinished(s1);
+      }
+
+      return ok({ snapshot: bump(s1), effects: [] });
+    }
+
+    case 'GAME_START': {
       const s0r = requireSnapshot(snapshot);
       if (!s0r.ok) return s0r;
 
       const s0 = s0r.value;
       if (s0.state === 'FINISHED') return err(conflict('GAME_ALREADY_FINISHED'));
       if (s0.state !== 'LOBBY') return err(conflict('GAME_NOT_IN_LOBBY'));
+
+      const hr = requireHostActor(actor, s0);
+      if (!hr.ok) return hr;
+
+      if (s0.players.length < 3) return err(conflict('MIN_PLAYERS_REQUIRED'));
 
       return ok({ snapshot: bump({ ...s0, state: 'IN_PROGRESS' }), effects: [] });
     }
@@ -79,17 +189,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       const s0 = s0r.value;
       if (s0.state === 'FINISHED') return ok({ snapshot: s0, effects: [] }); // idempotent
 
-      // Steg 1: finish abortar pågående round om den inte är REVEALED eller redan ABORTED
-      const r = s0.activeRound;
-      const shouldAbort = !!r && r.state !== 'REVEALED' && r.state !== 'ABORTED';
-
-      const s1: GameSnapshot = {
-        ...s0,
-        state: 'FINISHED',
-        activeRound: shouldAbort ? { ...r!, state: 'ABORTED' } : s0.activeRound,
-      };
-
-      // En bump per command
+      const s1 = finishGameIfNotFinished(s0);
       return ok({ snapshot: bump(s1), effects: [] });
     }
 
@@ -104,7 +204,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
 
       if (s0.activeRound) return err(conflict('ROUND_ALREADY_EXISTS'));
 
-      const s1: GameSnapshot = bump({
+      const s1: GameSnapshot = {
         ...s0,
         activeRound: {
           roundId: c.roundId,
@@ -112,9 +212,9 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
           oraclePlayerId: c.oraclePlayerId,
           prediction: null,
         },
-      });
+      };
 
-      return ok({ snapshot: s1, effects: [] });
+      return ok({ snapshot: bump(s1), effects: [] });
     }
 
     case 'ROUND_BEGIN': {
