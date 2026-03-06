@@ -12,7 +12,7 @@ Backend skickar alltid två delar:
 Dokumentet definierar informationsgränser.
 Det låser inte exakt API-form.
 
-Syftet är att säkerställa att privat information (Guess, Joker-användning, Prediction, facit)
+Syftet är att säkerställa att privat information (Guess, Joker-användning och facit)
 inte exponeras publikt före `REVEALED`.
 
 # NORMATIVT: Snapshot
@@ -29,15 +29,22 @@ Snapshot kan innehålla:
 - aktuella Players
 - aktuell Cycle och dess CycleState
 - aktuell Round och dess RoundState
-- Oracle för Rounden
+- Dealer för Rounden
 - aktiv Performance (utan facit före `REVEALED`)
 - publik submit-status per Player (t.ex. om Guess är inskickad)
 - Start Cards och Vibe Cards i respektive Players timeline
 - Hit Cards
-- Oracle Cards
 - publikt Joker-saldo per Player
-- fastställd svårighetsgrad (endast i `REVEALED`)
-- facit (endast i `REVEALED`)
+
+När Round är i `REVEALED` kan Snapshot även innehålla:
+
+- korrekt year
+- korrekt title
+- korrekt artist
+- resultat av Placement
+- tilldelade Vibe Cards
+- tilldelade Hit Cards
+- uppdaterade publika Joker-saldon
 
 Snapshot är identisk för alla Players.
 
@@ -53,6 +60,12 @@ publika artefakter (t.ex. tidslinje, Cards, Joker-saldo) i Snapshot.
 Snapshot representerar alltid spelets nuvarande tillstånd.
 Den är inte en historikvy.
 
+# INFORMATIVT: Reconnect
+
+Om en Player tillfälligt tappar anslutningen och sedan återansluter räknas detta inte som en ny Player.
+
+Playerns identitet, position i Dealer-rotationen och tidigare spelhandlingar påverkas inte.
+
 # INFORMATIVT: Historik
 
 Snapshot är inte avsedd att visa historik över borttagna Players.
@@ -67,7 +80,6 @@ Före `REVEALED` får Snapshot aldrig innehålla:
 
 - privata Guess-val
 - privata Joker-registreringar
-- Oracle Prediction
 - korrekt year
 - korrekt title
 - korrekt artist
@@ -89,7 +101,7 @@ ViewerContext får aldrig motsäga Snapshot.
 ViewerContext kan ange:
 
 - om mottagaren är Host
-- om mottagaren är Oracle i aktuell Round
+- om mottagaren är Dealer i aktuell Round
 - om mottagaren är gissande Player
 
 ## Guess (privat under `GUESSING`)
@@ -122,45 +134,38 @@ ViewerContext innehåller endast alternativen, inte korrekthetsmarkering.
 
 ViewerContext kan innehålla:
 
-- antal registrerade Jokrar
-  för aktiv Performance (max 1)
 - om Joker är registrerad för Placement
-- korrekt decenniumintervall
-  om Joker är registrerad
+- korrekt decenniumintervall om Joker är registrerad
 
 Publikt Joker-saldo hämtas från Snapshot.
 
 Registrerad Joker påverkar inte publikt saldo förrän `REVEALED`.
 
-## Oracle-specifikt (endast för Oracle)
+## Dealer-specifikt
 
-Under `GUESSING` innehåller ViewerContext för Oracle:
+Under `GUESSING` innehåller ViewerContext för Dealer:
 
 - facit (year, title, artist)
-- egen Prediction
-- om Round kan låsas (Prediction finns)
 
-Oracle ser alla Players tidslinjer och publika Joker-saldon i Snapshot.
+Dealer ser alla Players tidslinjer och publika Joker-saldon i Snapshot.
 
 # NORMATIVT: Reveal
 
 När Round går från `GUESSING` till `LOCKED` fastställs utfallet.
+
 När Round sedan övergår till `REVEALED` ska Snapshot visa det fastställda utfallet.
 
-Snapshot ska visa:
+Snapshot ska då visa:
 
 - korrekt year
 - korrekt title
 - korrekt artist
 - bedömning av varje Players Placement
-- bedömning av Title Guess och Artist Guess
+- bedömning av Title Guess
+- bedömning av Artist Guess
 - tilldelade Vibe Cards
 - tilldelade Hit Cards
-- tilldelade Oracle Cards
 - uppdaterade publika Joker-saldon
-- fastställd svårighetsgrad
-- Oracle Prediction
-- om Oracle Prediction var korrekt
 
 All bedömning är då publik och definitiv.
 
@@ -168,23 +173,22 @@ All bedömning är då publik och definitiv.
 
 När Round är i `REVEALED`:
 
-- Normalt triggar Oracle övergång till nästa Round eller `BOUNDARY_DECISION`.
-- Om Oracle inte längre är kvarvarande ska backend automatiskt fortsätta enligt `03-cycle`.
+- Normalt triggar Dealer övergång till nästa Round eller till `BOUNDARY_DECISION`.
+- Om Dealer inte längre är kvarvarande ska backend automatiskt fortsätta enligt regler i `03-cycle`.
 
 Detta påverkar inte Snapshotens innehåll.
+
 Tillåtna actions definieras av RoundState och CycleState.
 
-# NORMATIVT: Relation till Performance-byte
+# NORMATIVT: Relation till Round ABORT
 
-Om Performance ersätts under `GUESSING`:
+Om Round övergår till `ABORTED`:
 
-- tidigare privata Guess upphör att gälla
-- tidigare Joker-registreringar annulleras
-- tidigare Prediction ogiltigförklaras
-- ny ViewerContext ska genereras
-- Snapshot ska endast spegla den nya aktiva Performancen
+- privata Guess för Rounden upphör att gälla
+- registrerad Joker-användning annulleras
+- Joker-saldon påverkas inte
 
-Ingen information från tidigare Performance får påverka den nya.
+Snapshot ska då återspegla att Rounden inte längre är aktiv.
 
 # NORMATIVT: Ansvar
 

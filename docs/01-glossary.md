@@ -23,26 +23,23 @@ En spelomgång där Players deltar och Rounds spelas inom Cycles.
 ## Cycle
 
 **Definition:**
-En strukturell enhet inom ett Game där varje Player är Oracle en gång.
+En strukturell enhet inom ett Game som organiserar en följd av Rounds.
 
 **Egenskaper:**
 - Cycle består av Rounds.
-- I en avslutad Cycle har Players varit Oracle varsin gång.
-- Oracle-rotation är deterministisk.
+- Cycle används för att strukturera Dealer-rotation.
 - Cycle är struktur, inte spelhändelse.
 
 ## Round
 
 **Definition:**
-En spelhändelse inom ett Game där en Song spelas, Players lämnar Guesses,
-Oracle ger Prediction och resultat fastställs.
+En spelhändelse inom ett Game där en Song spelas och Players lämnar Guesses.
 
 **Egenskaper:**
-- Round har en Oracle.
-- Oracle leder rundans flöde.
+- Round har en Dealer.
+- Dealer leder rundans flöde.
 - En Round kan referera flera Performances över tid.
 - Högst en Performance är aktiv åt gången.
-- Round fastställer tilldelning av Cards och Jokrar (regler definieras i 04-round och 07-joker).
 
 ## Performance
 
@@ -63,7 +60,7 @@ En deltagare i ett Game.
 **Egenskaper:**
 - Player existerar endast inom ett Game.
 - Player är inte ett konto eller device.
-- Player kan lämna Guess, vara Oracle samt vinna Cards och Jokrar enligt Roundens regler.
+- Player kan lämna Guess, vara Dealer samt vinna Cards och Jokrar enligt Roundens regler.
 - Player kan tas bort från Game.
 
 **Kvarvarande Player:**
@@ -85,26 +82,16 @@ Den Player som ansvarar för Game under hela dess livscykel.
 - Host ansvarar för ljuduppspelning.
 - Host deltar i övrigt som vanlig Player.
 
-## Oracle
+## Dealer
 
 **Definition:**
-Den Player som leder en specifik Round och som har facit.
+Den Player som leder en specifik Round.
 
 **Egenskaper:**
-- Varje Round har exakt en Oracle.
-- Oracle leder rundans flöde.
-- Oracle gör Prediction istället för Guess.
-- Oracle kan tilldelas ett Oracle Card enligt regler för Prediction.
-
-## Prediction
-
-**Definition:**
-Oracles bedömning av svårighetsgrad (Lätt, Medel eller Svår) för aktiv Performance.
-
-**Egenskaper:**
-- Varje aktiv Performance kan ha högst en Prediction.
-- Prediction bedöms vid reveal.
-- Korrekt Prediction genererar ett Oracle Card.
+- Varje Round har exakt en Dealer.
+- Dealer leder rundans flöde.
+- Dealer väljer vilken Performance rundan spelas på.
+- Dealer lämnar ingen Guess i sin egen Round.
 
 ## Guess
 
@@ -126,7 +113,9 @@ En Players samlade svar för en Performance.
 En Players försök att placera Song i sin tidslinje.
 
 **Egenskaper:**
-- Placement är en Players försök att placera Song i sin tidslinje.
+- Placement representerar en position i Playerns timeline.
+- Positionen bestäms relativt de Cards som redan finns i timeline.
+- Placement uttrycker ett implicit årintervall.
 - Exakta regler för korrekthet definieras i `04-round`.
 
 ## Title Guess
@@ -157,15 +146,15 @@ En Players val av artist-alternativ för aktiv Performance.
 Ett persistent objekt som tillhör en Player i ett Game och som tilldelas enligt Roundens regler.
 
 Card är en kategori som inkluderar:
+
 - Start Card
 - Vibe Card
 - Hit Card
-- Oracle Card
 
 ## Start Card
 
 **Definition:**
-Ett Card som skapas vid Game-start och etablerar Playerns initiala timeline-position.
+Ett Card som etablerar ett ankare i en Players tidslinje.
 
 **Egenskaper:**
 - Innehåller endast year.
@@ -195,16 +184,6 @@ Ett Card som representerar en Song där Playern gissat korrekt Title och Artist 
 - Påverkar inte framtida Placement.
 - Räknas endast som utslagsgivare i slutlig ranking.
 
-## Oracle Card
-
-**Definition:**
-Ett Card som representerar rundans Song och tilldelas Oracle vid korrekt Prediction.
-
-**Egenskaper:**
-- Innehåller Song och year.
-- Placeras inte i Playerns timeline.
-- Räknas som utslagsgivare i slutlig ranking.
-
 ## Joker
 
 **Definition:**
@@ -214,9 +193,22 @@ En resurs som en Player kan använda för att förenkla Placement i en Round.
 - Tillhör en Player inom ett Game.
 - Joker påverkar aldrig korrekt svar eller bedömning.
 - Joker kan endast användas på Placement.
-- Exakta regler för begränsningar, effekt, intjäning och saldo definieras i 07-joker.
+- Exakta regler för begränsningar, effekt, intjäning och saldo definieras i `07-joker`.
 
 # NORMATIVT: Music Model
+
+## Informativt: Syfte
+
+Music Model beskriver den musikaliska datamodellen som spelet använder.
+
+Den definierar relationen mellan:
+- Song (den kuraterade musikidentiteten),
+- Recording (en spelbar inspelning av en Song),
+- Mix (en kuraterad samling av Songs).
+
+Denna modell påverkar urvalet av musik som kan förekomma i spelet,
+men den påverkar inte spelregler, state machines eller transitions.
+Spelregler definieras i dokument 02–07.
 
 ## Song
 
@@ -250,10 +242,9 @@ En kuraterad samling av Songs.
 
 - Game består av Cycles.
 - Cycle består av Rounds.
-- Round har en Oracle.
+- Round har en Dealer.
 - En Round kan ha högst en aktiv Performance åt gången.
 - Guess gäller alltid aktiv Performance.
 - Cards och Jokrar genereras genom Round.
 - Start Cards och Vibe Cards placeras i Playerns timeline.
-- Hit Cards och Oracle Cards placeras inte i timeline.
-- Prediction gäller alltid aktiv Performance.
+- Hit Cards placeras inte i timeline.

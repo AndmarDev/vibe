@@ -94,6 +94,9 @@ I de flesta fall ska samband uttryckas genom konsekvent begreppsanvändning i l�
 
 # Dokumentens ansvar
 
+Glossary (`01-glossary.md`) definierar begrepp men innehåller inga spelregler.
+Regler, tillståndsövergångar och beteenden definieras i dokument 02–07.
+
 Varje dokument ska:
 - vara så självbärande som möjligt
 - ha ett tydligt avgränsat syfte
@@ -129,7 +132,7 @@ Normativ auktoritet får aldrig spridas över flera dokument.
 
 # Sammanfattning
 
-- Skriv lite, men exakt.
+- Prioritera precision framför mängd text (skriv lite, men exakt).
 - Lås begrepp tidigt.
 - Förklara endast där det behövs.
 - Undvik slentrian.
