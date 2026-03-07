@@ -1,6 +1,6 @@
 // libs/model/src/commands.ts
 
-import type { CycleId, Difficulty, GameId, PlayerId, RoundId, PerformanceId } from './domain.js';
+import type { CycleId, GameId, PlayerId, RoundId, PerformanceId } from './domain.js';
 
 export type Command =
   | { type: 'GAME_CREATE'; gameId: GameId }
@@ -20,7 +20,6 @@ export type Command =
   | { type: 'ROUND_CREATE_SYSTEM'; roundId: RoundId } // internal only
   | { type: 'ROUND_CREATE'; roundId: RoundId } // host-only
   | { type: 'ROUND_BEGIN' }
-  | { type: 'ROUND_SET_PREDICTION'; difficulty: Difficulty }
   | { type: 'ROUND_LOCK' }
   | { type: 'ROUND_REVEAL' }
   | { type: 'ROUND_ABORT_SYSTEM' } // internal only

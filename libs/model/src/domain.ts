@@ -9,8 +9,6 @@ export type PerformanceId = number;
 export type GameState = 'LOBBY' | 'IN_PROGRESS' | 'FINISHED';
 export type RoundState = 'READY' | 'GUESSING' | 'LOCKED' | 'REVEALED' | 'ABORTED';
 
-export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
-
 export type Actor =
   | { kind: 'SYSTEM' }
   | { kind: 'PLAYER'; playerId: PlayerId };
@@ -33,10 +31,7 @@ export type ActiveCycle = {
 export type ActiveRound = {
   roundId: RoundId;
   state: RoundState;
-  oraclePlayerId: PlayerId;
-
-  // Steg 1: bara prediction-gate (ingen guess/performance än)
-  prediction: Difficulty | null;
+  dealerPlayerId: PlayerId;
 };
 
 export type ActivePerformance = {

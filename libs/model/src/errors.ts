@@ -9,7 +9,7 @@ export type KnownErrorReason =
 
   // auth / actor
   | 'SYSTEM_ONLY'
-  | 'ORACLE_ONLY'
+  | 'DEALER_ONLY'
   | 'HOST_ONLY'
 
   // players / host
@@ -38,10 +38,7 @@ export type KnownErrorReason =
   | 'ROUND_ALREADY_TERMINAL'
   | 'ROUND_NOT_IN_READY'
   | 'ROUND_NOT_IN_GUESSING'
-  | 'ROUND_NOT_IN_LOCKED'
-
-  // preconditions
-  | 'PREDICTION_REQUIRED';
+  | 'ROUND_NOT_IN_LOCKED';
 
 export type KnownError =
   | { status: 400; code: 'BAD_REQUEST'; reason: KnownErrorReason }

@@ -10,7 +10,6 @@ import type {
   PlayerId,
   RoundId,
   Result,
-  PerformanceId,
   ActivePerformance,
 } from '@app/model';
 import type { Command } from '@app/model';
@@ -46,11 +45,11 @@ function requireGameInProgress(s: GameSnapshot): Result<GameSnapshot, KnownError
   return ok(s);
 }
 
-function requireOracle(actor: Actor, s: GameSnapshot): Result<ActiveRound, KnownError> {
+function requireDealer(actor: Actor, s: GameSnapshot): Result<ActiveRound, KnownError> {
   const r = s.activeRound;
   if (!r) return err(conflict('ROUND_REQUIRED'));
-  if (actor.kind !== 'PLAYER') return err(forbidden('ORACLE_ONLY'));
-  if (actor.playerId !== r.oraclePlayerId) return err(forbidden('ORACLE_ONLY'));
+  if (actor.kind !== 'PLAYER') return err(forbidden('DEALER_ONLY'));
+  if (actor.playerId !== r.dealerPlayerId) return err(forbidden('DEALER_ONLY'));
   return ok(r);
 }
 
@@ -119,9 +118,9 @@ function applyPlayerRemove(s0: GameSnapshot, removeId: number): Result<GameSnaps
   let shouldClearRoundAndPerf = false;
 
   if (s0.state === 'IN_PROGRESS' && cycle1) {
-    // Oracle-remove under pågående round => abort + clear
+    // Dealer-remove under pågående round => abort + clear
     if (round1 && round1.state !== 'REVEALED' && round1.state !== 'ABORTED') {
-      if (round1.oraclePlayerId === removeId) {
+      if (round1.dealerPlayerId === removeId) {
         // Flagga att vi behöver cleara round och performance
         shouldClearRoundAndPerf = true;
       }
@@ -171,15 +170,14 @@ function createRoundInActiveCycle(s0: GameSnapshot, cycle: ActiveCycle, roundId:
     return err(conflict('ROTATION_EXHAUSTED'));
   }
 
-  const oraclePlayerId = cycle.rotation[cycle.rotationIndex];
+  const dealerPlayerId = cycle.rotation[cycle.rotationIndex];
 
   const s1: GameSnapshot = {
     ...s0,
     activeRound: {
       roundId,
       state: 'READY',
-      oraclePlayerId,
-      prediction: null,
+      dealerPlayerId,
     },
   };
 
@@ -469,7 +467,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      const rr = requireOracle(actor, s0);
+      const rr = requireDealer(actor, s0);
       if (!rr.ok) return rr;
       const r = rr.value;
 
@@ -477,26 +475,6 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
 
       return ok({
         snapshot: bump({ ...s0, activeRound: { ...r, state: 'GUESSING' } }),
-        effects: [],
-      });
-    }
-
-    case 'ROUND_SET_PREDICTION': {
-      const s0r = requireSnapshot(snapshot);
-      if (!s0r.ok) return s0r;
-
-      const gp = requireGameInProgress(s0r.value);
-      if (!gp.ok) return gp;
-      const s0 = gp.value;
-
-      const rr = requireOracle(actor, s0);
-      if (!rr.ok) return rr;
-      const r = rr.value;
-
-      if (r.state !== 'GUESSING') return err(conflict('ROUND_NOT_IN_GUESSING'));
-
-      return ok({
-        snapshot: bump({ ...s0, activeRound: { ...r, prediction: c.difficulty } }),
         effects: [],
       });
     }
@@ -509,12 +487,11 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      const rr = requireOracle(actor, s0);
+      const rr = requireDealer(actor, s0);
       if (!rr.ok) return rr;
       const r = rr.value;
 
       if (r.state !== 'GUESSING') return err(conflict('ROUND_NOT_IN_GUESSING'));
-      if (r.prediction === null) return err(conflict('PREDICTION_REQUIRED'));
 
       return ok({
         snapshot: bump({ ...s0, activeRound: { ...r, state: 'LOCKED' } }),
@@ -530,7 +507,7 @@ export function apply(input: ApplyInput): Result<ApplyValue, KnownError> {
       if (!gp.ok) return gp;
       const s0 = gp.value;
 
-      const rr = requireOracle(actor, s0);
+      const rr = requireDealer(actor, s0);
       if (!rr.ok) return rr;
       const r = rr.value;
 
